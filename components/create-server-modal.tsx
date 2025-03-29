@@ -1,16 +1,15 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Plus, Upload, X } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import { UploadButton } from "@/components/upload-button"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -26,20 +25,21 @@ import * as z from "zod"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { useToast } from "@/components/ui/use-toast"
+import axios from "axios"
 
 const formSchema = z.object({
   name: z.string().min(2, "Server name must be at least 2 characters"),
   description: z.string().optional(),
   category: z.enum(["gaming", "technology", "creative", "education", "business", "other"]),
   isPrivate: z.boolean().default(false),
-  banner: z.any().optional(),
-  logo: z.any().optional(),
+  bannerUrl: z.string().optional(),
+  logoUrl: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -47,12 +47,14 @@ type FormValues = z.infer<typeof formSchema>
 interface CreateServerModalProps {
   buttonText?: string
   className?: string
+  onServerCreated?: () => void
 }
 
-export function CreateServerModal({ buttonText = "Create Server", className = "" }: CreateServerModalProps) {
+export function CreateServerModal({ buttonText = "Create Server", className = "", onServerCreated }: CreateServerModalProps) {
   const [open, setOpen] = useState(false)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -64,33 +66,48 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
     },
   })
 
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setBannerPreview(reader.result as string)
-        form.setValue("banner", file)
-      }
-      reader.readAsDataURL(file)
-    }
+  const handleBannerUpload = (url: string) => {
+    setBannerPreview(url)
+    form.setValue("bannerUrl", url)
   }
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string)
-        form.setValue("logo", file)
-      }
-      reader.readAsDataURL(file)
-    }
+  const handleLogoUpload = (url: string) => {
+    setLogoPreview(url)
+    form.setValue("logoUrl", url)
   }
 
-  function onSubmit(values: FormValues) {
-    console.log("Form values:", values)
-    setOpen(false)
+  async function onSubmit(values: FormValues) {
+    try {
+      const response = await axios.post("/api/servers", {
+        name: values.name,
+        description: values.description,
+        category: values.category,
+        isPrivate: values.isPrivate,
+        imageUrl: values.logoUrl,
+        bannerUrl: values.bannerUrl,
+      })
+
+      if (response.status !== 200) {
+        throw new Error("Failed to create server")
+      }
+
+      toast({
+        title: "Success",
+        description: "Server created successfully",
+      })
+      setOpen(false)
+      form.reset()
+      setBannerPreview(null)
+      setLogoPreview(null)
+      onServerCreated?.()
+    } catch (error) {
+      console.error("Error creating server:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create server",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -123,27 +140,30 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
                       className="object-cover"
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                      <Button type="button" variant="secondary" size="sm" onClick={() => setBannerPreview(null)}>
+                      <Button type="button" variant="secondary" size="sm" onClick={() => {
+                        setBannerPreview(null)
+                        form.setValue("bannerUrl", undefined)
+                      }}>
                         <X className="mr-2 h-4 w-4" />
                         Remove
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <label className="flex h-full w-full cursor-pointer items-center justify-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <Upload className="h-8 w-8 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Upload banner image</span>
-                      <span className="text-xs text-muted-foreground">Recommended: 2560x1440px (16:9)</span>
-                    </div>
-                    <input type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
-                  </label>
+                  <div className="flex flex-col gap-2 h-full w-full items-center justify-center">
+                    <UploadButton
+                      type="image"
+                      onUpload={handleBannerUpload}
+                      className="flex flex-col items-center gap-2"
+                    />
+                    <p className="text-xs text-muted-foreground">Recommended: 16:9 aspect ratio</p>
+                  </div>
                 )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Server Logo (Optional)  <span className="text-xs text-muted-foreground">Recommended: 128x128px</span></Label>
+              <Label>Server Logo (Optional) <span className="text-xs text-muted-foreground">Recommended: 128x128px</span></Label>
               <div className="flex items-center gap-4">
                 <div className="relative h-20 w-20 overflow-hidden rounded-full border">
                   {logoPreview ? (
@@ -152,20 +172,20 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
                       <button
                         type="button"
                         className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
-                        onClick={() => setLogoPreview(null)}
+                        onClick={() => {
+                          setLogoPreview(null)
+                          form.setValue("logoUrl", undefined)
+                        }}
                       >
                         <X className="h-4 w-4 text-white" />
                       </button>
                     </div>
                   ) : (
-                    <label className="flex h-full w-full  cursor-pointer items-center justify-center hover:bg-muted/50 transition-colors">
-
-                        <div className="rounded-full  bg-muted p-2">
-                          <Upload className="h-full w-full text-muted-foreground" />
-                        </div>
-
-                      <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-                    </label>
+                    <UploadButton
+                      type="image"
+                      onUpload={handleLogoUpload}
+                      className="flex h-full w-full items-center justify-center hover:bg-muted/50 transition-colors"
+                    />
                   )}
                 </div>
               </div>

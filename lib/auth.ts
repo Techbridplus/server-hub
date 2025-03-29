@@ -6,6 +6,8 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { authenticator } from "otplib"
+import { type NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
 
 declare module "next-auth" {
   interface Session {
@@ -189,5 +191,22 @@ async function verify2FACode(userId: string, code: string): Promise<boolean> {
     token: code,
     secret: twoFactorAuth.secret,
   })
+}
+
+type HandlerFunction = (req: NextRequest, session: any, prisma: PrismaClient) => Promise<NextResponse>
+
+export async function authMiddlewareAppRouter(req: NextRequest, handler: HandlerFunction) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    return handler(req, session, prisma)
+  } catch (error) {
+    console.error("Auth middleware error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
 }
 

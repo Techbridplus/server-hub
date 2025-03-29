@@ -1,122 +1,158 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter } from "@/lib/auth"
-import prisma from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 
-// GET /api/servers - Get all servers
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-  const category = searchParams.get("category")
-  const search = searchParams.get("search")
-  const page = Number.parseInt(searchParams.get("page") || "1")
-  const limit = Number.parseInt(searchParams.get("limit") || "10")
-  const skip = (page - 1) * limit
-
-  try {
-    // Build filter conditions
-    const where: any = {}
-
-    if (category && category !== "all") {
-      where.category = category
-    }
-
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
-        { tags: { some: { name: { contains: search, mode: "insensitive" } } } },
-      ]
-    }
-
-    // Get servers with pagination
-    const servers = await prisma.server.findMany({
-      where,
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-        _count: {
-          select: {
-            members: true,
-          },
-        },
-        tags: true,
-      },
-      skip,
-      take: limit,
-      orderBy: {
-        createdAt: "desc",
-      },
-    })
-
-    // Get total count for pagination
-    const total = await prisma.server.count({ where })
-
-    return NextResponse.json({
-      servers,
-      pagination: {
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit),
-      },
-    })
-  } catch (error) {
-    console.error("Error fetching servers:", error)
-    return NextResponse.json({ error: "Failed to fetch servers" }, { status: 500 })
+interface PaginatedResponse {
+  servers: any[]
+  categories: { name: string; count: number }[]
+  pagination: {
+    total: number
+    page: number
+    limit: number
+    pages: number
   }
+}
+
+// GET /api/servers - Get servers with categories and pagination
+export async function GET(req: NextRequest) {
+  return authMiddlewareAppRouter(req, async (req, session) => {
+    try {
+      const { searchParams } = new URL(req.url)
+      const category = searchParams.get("category")
+      const search = searchParams.get("search")
+      const featured = searchParams.get("featured") === "true"
+      const includePrivate = searchParams.get("includePrivate") === "true"
+      const page = Number(searchParams.get("page") || "1")
+      const limit = Number(searchParams.get("limit") || "10")
+      const skip = (page - 1) * limit
+
+      // Build filter conditions
+      const where: any = {}
+
+      if (!includePrivate) {
+        where.isPrivate = false // Only show public servers by default
+      }
+
+      if (category && category !== "all") {
+        where.category = category
+      }
+
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+        ]
+      }
+
+      if (featured) {
+        where.isFeatured = true
+      }
+
+      // Get all unique categories with their counts in parallel with servers
+      const [servers, categories] = await Promise.all([
+        // Get servers with pagination
+        prisma.server.findMany({
+          where,
+          include: {
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+            _count: {
+              select: {
+                members: true,
+              },
+            },
+          },
+          skip,
+          take: limit,
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
+        // Get unique categories with counts
+        prisma.server.groupBy({
+          by: ['category'],
+          _count: {
+            category: true,
+          },
+          orderBy: {
+            category: 'asc',
+          },
+        }),
+      ])
+
+      // Get total count for pagination
+      const total = await prisma.server.count({ where })
+
+      // Format categories
+      const formattedCategories = categories.map((cat: { category: string; _count: { category: number } }) => ({
+        name: cat.category,
+        count: cat._count.category,
+      }))
+
+      return NextResponse.json({
+        servers,
+        categories: formattedCategories,
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit),
+        },
+      })
+    } catch (error) {
+      console.error("Error fetching servers:", error)
+      return NextResponse.json({ error: "Failed to fetch servers" }, { status: 500 })
+    }
+  })
 }
 
 // POST /api/servers - Create a new server
 export async function POST(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(req, async (req, session) => {
     try {
-      const { name, description, category, isPrivate, isExclusive, accessKey, imageUrl, bannerUrl, tags } =
-        await req.json()
+      const body = await req.json()
+      const { name, description, category, isPrivate, imageUrl, bannerUrl } = body
 
       // Validate required fields
-      if (!name || !category) {
-        return NextResponse.json({ error: "Name and category are required" }, { status: 400 })
+      if (!name) {
+        return NextResponse.json({ error: "Server name is required" }, { status: 400 })
       }
 
-      // Create server
+      // Create the server
       const server = await prisma.server.create({
         data: {
           name,
           description,
           category,
-          isPrivate: isPrivate || false,
-          isExclusive: isExclusive || false,
-          accessKey: isPrivate ? accessKey : null,
+          isPrivate,
           imageUrl,
           bannerUrl,
-          owner: {
-            connect: {
-              id: session.user.id,
-            },
-          },
-          // Add the owner as an admin member
+          ownerId: session.user.id,
           members: {
             create: {
-              user: {
-                connect: {
-                  id: session.user.id,
-                },
-              },
-              role: "admin",
+              userId: session.user.id,
+              role: "OWNER",
             },
           },
-          // Add tags if provided
-          tags: tags
-            ? {
-                create: tags.map((tag: string) => ({
-                  name: tag,
-                })),
-              }
-            : undefined,
+        },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+          _count: {
+            select: {
+              members: true,
+            },
+          },
         },
       })
 
