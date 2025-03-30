@@ -16,46 +16,44 @@ interface CategoryInfo {
 
 // GET /api/categories - Get all unique categories with their server counts
 export async function GET(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async () => {
-    try {
-      // Get all servers to extract unique categories
-      const servers = await prisma.server.findMany({
-        select: {
-          category: true,
-          _count: {
-            select: {
-              members: true,
-            },
+  try {
+    // Get all servers to extract unique categories
+    const servers = await prisma.server.findMany({
+      select: {
+        category: true,
+        _count: {
+          select: {
+            members: true,
           },
         },
-      }) as ServerCategory[]
+      },
+    }) as ServerCategory[]
 
-      // Create a map to store unique categories and their counts
-      const categoryMap = new Map<string, CategoryInfo>()
+    // Create a map to store unique categories and their counts
+    const categoryMap = new Map<string, CategoryInfo>()
 
-      // Process each server to count categories
-      servers.forEach((server: ServerCategory) => {
-        const currentCount = categoryMap.get(server.category)?.count || 0
-        categoryMap.set(server.category, {
-          name: server.category,
-          count: currentCount + 1,
-        })
+    // Process each server to count categories
+    servers.forEach((server: ServerCategory) => {
+      const currentCount = categoryMap.get(server.category)?.count || 0
+      categoryMap.set(server.category, {
+        name: server.category,
+        count: currentCount + 1,
       })
+    })
 
-      // Convert map to array and sort by name
-      const categories = Array.from(categoryMap.values()).sort((a, b) => 
-        a.name.localeCompare(b.name)
-      )
+    // Convert map to array and sort by name
+    const categories = Array.from(categoryMap.values()).sort((a, b) => 
+      a.name.localeCompare(b.name)
+    )
 
-      return NextResponse.json(categories)
-    } catch (error) {
-      console.error("Error fetching categories:", error)
-      return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 })
-    }
-  })
+    return NextResponse.json(categories)
+  } catch (error) {
+    console.error("Error fetching categories:", error)
+    return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 })
+  }
 }
 
-// GET /api/categories/[category]/servers - Get servers for a specific category
+// GET /api/categories/[category]/servers - Get servers for a specific category (protected route)
 export async function GET_SERVERS(req: NextRequest) {
   return authMiddlewareAppRouter(req, async (req) => {
     try {

@@ -9,9 +9,10 @@ interface UploadButtonProps {
   type: "image" | "video"
   onUpload: (url: string) => void
   className?: string
+  disabled?: boolean
 }
 
-export function UploadButton({ type, onUpload, className = "" }: UploadButtonProps) {
+export function UploadButton({ type, onUpload, className = "", disabled = false }: UploadButtonProps) {
   const [isUploading, setIsUploading] = useState(false)
   const { toast } = useToast()
 
@@ -82,6 +83,7 @@ export function UploadButton({ type, onUpload, className = "" }: UploadButtonPro
         onChange={handleFileSelect}
         className="hidden"
         id={`file-upload-${type}`}
+        disabled={disabled}
       />
       <label
         htmlFor={`file-upload-${type}`}

@@ -28,6 +28,8 @@ function ServerSidebar() {
                 .then((data) => setMyServers(data.data || []))
                 .catch((err) => console.error("Error fetching my servers:", err))
                 .finally(() => setIsLoading(false))
+        }else{
+            setIsLoading(false)
         }
     }, [session])
 
@@ -37,6 +39,8 @@ function ServerSidebar() {
                 .then((data) => setJoinedServers(data.data || []))
                 .catch((err) => console.error("Error fetching joined servers:", err))
                 .finally(() => setIsLoading(false))
+        }else{
+            setIsLoading(false)
         }
     }, [session])
 

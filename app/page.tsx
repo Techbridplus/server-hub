@@ -75,6 +75,7 @@ export default function HomePage() {
   // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
+      setIsLoading(true)
       try {
         const response = await axios.get("/api/categories")
         setCategories([{ id: "all", name: "All", count: 0 }, ...response.data])
@@ -85,66 +86,28 @@ export default function HomePage() {
           description: "Failed to load categories. Please try again.",
           variant: "destructive",
         })
+      } finally {
+        setIsLoading(false)
       }
     }
 
     fetchCategories()
   }, [toast])
 
-  // Fetch my servers
-  useEffect(() => {
-    const fetchMyServers = async () => {
-      try {
-        const response = await axios.get("/api/users/me/servers?owned=true")
-        setMyServers(response.data || [])
-      } catch (error) {
-        console.error("Error fetching my servers:", error)
-        toast({
-          title: "Error", 
-          description: "Failed to load your servers. Please try again.",
-          variant: "destructive",
-        })
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    if (session?.user) {
-      fetchMyServers()
-    }
-  }, [session, toast])
-
-  // Fetch joined servers
-  useEffect(() => {
-    const fetchJoinedServers = async () => {
-      try {
-        const response = await axios.get("/api/users/me/servers?joined=true")
-        setJoinedServers(response.data || [])
-      } catch (error) {
-        console.error("Error fetching joined servers:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load joined servers. Please try again.", 
-          variant: "destructive",
-        })
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    if (session?.user) {
-      fetchJoinedServers() 
-    }
-  }, [session, toast])
-
   // Fetch all servers for discover tab
   useEffect(() => {
     const fetchAllServers = async () => {
       setIsLoading(true)
       try {
-        const response = await axios.get("/api/servers?page=1&limit=10&includePrivate=true&showAll=true")
+        const response = await axios.get<PaginatedResponse>("/api/servers?page=1&limit=10&includePrivate=true&showAll=true")
         setAllServers(response.data.servers || [])
         setFilteredServers(response.data.servers || [])
+        if (response.data.pagination) {
+          setHasMore(response.data.pagination.page < response.data.pagination.pages)
+        } else {
+          setHasMore(false)
+        }
+        setCurrentPage(1)
       } catch (error) {
         console.error("Error fetching servers:", error)
         toast({
@@ -159,6 +122,142 @@ export default function HomePage() {
 
     fetchAllServers()
   }, [toast])
+
+  // Fetch my servers only if user is logged in
+  useEffect(() => {
+    const fetchMyServers = async () => {
+      if (!session?.user) return
+      
+      try {
+        const response = await axios.get<PaginatedResponse>(`/api/users/me/servers?owned=true&page=1&limit=10`)
+        setMyServers(response.data.servers || [])
+        if (response.data.pagination) {
+          setHasMore(response.data.pagination.page < response.data.pagination.pages)
+        } else {
+          setHasMore(false)
+        }
+        setCurrentPage(1)
+      } catch (error) {
+        console.error("Error fetching my servers:", error)
+        toast({
+          title: "Error", 
+          description: "Failed to load your servers. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchMyServers()
+  }, [session, toast])
+
+  // Fetch joined servers only if user is logged in
+  useEffect(() => {
+    const fetchJoinedServers = async () => {
+      if (!session?.user) return
+      
+      try {
+        const response = await axios.get<PaginatedResponse>(`/api/users/me/servers?joined=true&page=1&limit=10`)
+        setJoinedServers(response.data.servers || [])
+        if (response.data.pagination) {
+          setHasMore(response.data.pagination.page < response.data.pagination.pages)
+        } else {
+          setHasMore(false)
+        }
+        setCurrentPage(1)
+      } catch (error) {
+        console.error("Error fetching joined servers:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load joined servers. Please try again.", 
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchJoinedServers()
+  }, [session, toast])
+
+  // Load more servers when scrolling
+  useEffect(() => {
+    const loadMore = async () => {
+      if (isLoadingMore || !hasMore) return
+
+      setIsLoadingMore(true)
+      const nextPage = currentPage + 1
+
+      try {
+        let response: { data: PaginatedResponse } = {
+          data: {
+            servers: [],
+            categories: [],
+            pagination: {
+              total: 0,
+              page: 1,
+              limit: 10,
+              pages: 1
+            }
+          }
+        }
+        switch (activeTab) {
+          case "discover":
+            response = await axios.get<PaginatedResponse>(`/api/servers?page=${nextPage}&limit=10&includePrivate=true&showAll=true`)
+            // Filter out duplicates before adding new servers
+            const newServers = response.data.servers.filter(
+              newServer => !allServers.some(existingServer => existingServer.id === newServer.id)
+            )
+            setAllServers(prev => [...prev, ...newServers])
+            setFilteredServers(prev => [...prev, ...newServers])
+            break
+          case "my-servers":
+            response = await axios.get<PaginatedResponse>(`/api/users/me/servers?owned=true&page=${nextPage}&limit=10`)
+            // Filter out duplicates before adding new servers
+            const newMyServers = response.data.servers.filter(
+              newServer => !myServers.some(existingServer => existingServer.id === newServer.id)
+            )
+            setMyServers(prev => [...prev, ...newMyServers])
+            break
+          case "joined":
+            response = await axios.get<PaginatedResponse>(`/api/users/me/servers?joined=true&page=${nextPage}&limit=10`)
+            // Filter out duplicates before adding new servers
+            const newJoinedServers = response.data.servers.filter(
+              newServer => !joinedServers.some(existingServer => existingServer.id === newServer.id)
+            )
+            setJoinedServers(prev => [...prev, ...newJoinedServers])
+            break
+        }
+
+        if (response?.data?.pagination) {
+          setHasMore(response.data.pagination.page < response.data.pagination.pages)
+          setCurrentPage(nextPage)
+        } else {
+          setHasMore(false)
+        }
+      } catch (error) {
+        console.error("Error loading more servers:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load more servers. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoadingMore(false)
+      }
+    }
+
+    if (inView) {
+      loadMore()
+    }
+  }, [inView, activeTab, currentPage, hasMore, isLoadingMore, toast, allServers, myServers, joinedServers])
+
+  // Reset pagination when changing tabs
+  useEffect(() => {
+    setCurrentPage(1)
+    setHasMore(true)
+  }, [activeTab])
 
   // Filter servers based on category and search query
   useEffect(() => {
@@ -197,8 +296,16 @@ export default function HomePage() {
         ? "/api/servers?page=1&limit=10&includePrivate=true&showAll=true"
         : `/api/servers?page=1&limit=10&includePrivate=true&category=${category}`
       
-      const response = await axios.get(url)
+      const response = await axios.get<PaginatedResponse>(url)
+      // Reset the lists with new servers
       setAllServers(response.data.servers || [])
+      setFilteredServers(response.data.servers || [])
+      if (response.data.pagination) {
+        setHasMore(response.data.pagination.page < response.data.pagination.pages)
+      } else {
+        setHasMore(false)
+      }
+      setCurrentPage(1)
     } catch (error) {
       console.error("Error fetching servers for category:", error)
       toast({
@@ -210,9 +317,6 @@ export default function HomePage() {
       setIsLoading(false)
     }
   }
-
-  console.log("joinedServers", joinedServers)
-  console.log("myServers", myServers)
 
   return (
     <div className="flex h-screen bg-background">
@@ -236,6 +340,7 @@ export default function HomePage() {
                   className="w-full rounded-full bg-muted pl-8 md:w-80"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onClick={() => setActiveTab("discover")}
                 />
               </div>
             </div>
@@ -284,17 +389,31 @@ export default function HomePage() {
           {/* Category pills */}
           <div className="mb-6 overflow-x-auto pb-2">
             <div className="flex gap-2">
-              {categories.map((category) => (
-                <Button
-                  key={category.id || category.name}
-                  variant={activeCategory === category.name ? "default" : "outline"}
-                  size="sm"
-                  className="cursor-pointer whitespace-nowrap"
-                  onClick={() => handleCategoryChange(category.name)}
-                >
-                  {category.name}
-                </Button>
-              ))}
+              {isLoading ? (
+                // Skeleton loading state
+                <>
+                  <div className="h-8 w-20 animate-pulse rounded-md bg-muted" />
+                  <div className="h-8 w-24 animate-pulse rounded-md bg-muted" />
+                  <div className="h-8 w-16 animate-pulse rounded-md bg-muted" />
+                  <div className="h-8 w-28 animate-pulse rounded-md bg-muted" />
+                  <div className="h-8 w-20 animate-pulse rounded-md bg-muted" />
+                  <div className="h-8 w-24 animate-pulse rounded-md bg-muted" />
+                  <div className="h-8 w-16 animate-pulse rounded-md bg-muted" />
+                  <div className="h-8 w-28 animate-pulse rounded-md bg-muted" />
+                </>
+              ) : (
+                categories.map((category) => (
+                  <Button
+                    key={category.id || category.name}
+                    variant={activeCategory === category.name ? "default" : "outline"}
+                    size="sm"
+                    className="cursor-pointer whitespace-nowrap"
+                    onClick={() => handleCategoryChange(category.name)}
+                  >
+                    {category.name}
+                  </Button>
+                ))
+              )}
             </div>
           </div>
 
@@ -307,8 +426,21 @@ export default function HomePage() {
 
             <TabsContent value="discover" className="mt-6 animate-fade-in">
               {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                <div className={cn(
+                  "grid gap-6",
+                  layoutType === "modern"
+                    ? "grid-cols-1"
+                    : layoutType === "grid"
+                      ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                      : "grid-cols-1",
+                )}>
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="rounded-lg border bg-card p-4 animate-pulse">
+                      <div className="aspect-square w-full rounded-md bg-muted mb-4" />
+                      <div className="h-4 w-3/4 bg-muted rounded mb-2" />
+                      <div className="h-3 w-1/2 bg-muted rounded" />
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <>
@@ -340,7 +472,7 @@ export default function HomePage() {
                       />
                     ))}
 
-                    {filteredServers.length === 0 && !isLoading && (
+                    { !isLoading &&filteredServers.length === 0 &&  (
                       <div className="col-span-full flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
                         <h3 className="mb-2 text-lg font-semibold">No servers found</h3>
                         <p className="mb-4 text-sm text-muted-foreground">
@@ -358,30 +490,57 @@ export default function HomePage() {
                       </div>
                     )}
                   </div>
+                  {hasMore && (
+                    <div ref={ref} className="mt-6 flex justify-center">
+                      {isLoadingMore && (
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </TabsContent>
 
             <TabsContent value="my-servers" className="mt-6 animate-fade-in">
               {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                <div className={cn(
+                  "grid gap-6",
+                  layoutType === "modern"
+                    ? "grid-cols-1"
+                    : layoutType === "grid"
+                      ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                      : "grid-cols-1",
+                )}>
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="rounded-lg border bg-card p-4 animate-pulse">
+                      <div className="aspect-square w-full rounded-md bg-muted mb-4" />
+                      <div className="h-4 w-3/4 bg-muted rounded mb-2" />
+                      <div className="h-3 w-1/2 bg-muted rounded" />
+                    </div>
+                  ))}
                 </div>
               ) : myServers.length > 0 ? (
-                <div
-                  className={cn(
+                <>
+                  <div className={cn(
                     "grid gap-6",
                     layoutType === "modern"
                       ? "grid-cols-1"
                       : layoutType === "grid"
                         ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                         : "grid-cols-1",
+                  )}>
+                    {myServers.map((server) => (
+                      <ServerCard key={server.id} server={server} isAdmin={true} layout={layoutType} />
+                    ))}
+                  </div>
+                  {hasMore && (
+                    <div ref={ref} className="mt-6 flex justify-center">
+                      {isLoadingMore && (
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                      )}
+                    </div>
                   )}
-                >
-                  {myServers.map((server) => (
-                    <ServerCard key={server.id} server={server} isAdmin={true} layout={layoutType} />
-                  ))}
-                </div>
+                </>
               ) : (
                 <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
                   <h3 className="mb-2 text-lg font-semibold">No servers created yet</h3>
@@ -401,30 +560,50 @@ export default function HomePage() {
 
             <TabsContent value="joined" className="mt-6 animate-fade-in">
               {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                <div className={cn(
+                  "grid gap-6",
+                  layoutType === "modern"
+                    ? "grid-cols-1"
+                    : layoutType === "grid"
+                      ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                      : "grid-cols-1",
+                )}>
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="rounded-lg border bg-card p-4 animate-pulse">
+                      <div className="aspect-square w-full rounded-md bg-muted mb-4" />
+                      <div className="h-4 w-3/4 bg-muted rounded mb-2" />
+                      <div className="h-3 w-1/2 bg-muted rounded" />
+                    </div>
+                  ))}
                 </div>
               ) : joinedServers.length > 0 ? (
-                <div
-                  className={cn(
+                <>
+                  <div className={cn(
                     "grid gap-6",
                     layoutType === "modern"
                       ? "grid-cols-1"
                       : layoutType === "grid"
                         ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                         : "grid-cols-1",
+                  )}>
+                    {joinedServers.map((server) => (
+                      <ServerCard
+                        key={server.id}
+                        server={server}
+                        isAdmin={myServers.some((s) => s.id === server.id)}
+                        layout={layoutType}
+                        isJoined={true}
+                      />
+                    ))}
+                  </div>
+                  {hasMore && (
+                    <div ref={ref} className="mt-6 flex justify-center">
+                      {isLoadingMore && (
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                      )}
+                    </div>
                   )}
-                >
-                  {joinedServers.map((server) => (
-                    <ServerCard
-                      key={server.id}
-                      server={server}
-                      isAdmin={myServers.some((s) => s.id === server.id)}
-                      layout={layoutType}
-                      isJoined={true}
-                    />
-                  ))}
-                </div>
+                </>
               ) : (
                 <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
                   <h3 className="mb-2 text-lg font-semibold">You haven't joined any servers</h3>

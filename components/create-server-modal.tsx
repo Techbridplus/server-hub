@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/form"
 import { useToast } from "@/components/ui/use-toast"
 import axios from "axios"
-
+import { useRouter } from "next/navigation"
 const formSchema = z.object({
   name: z.string().min(2, "Server name must be at least 2 characters"),
   description: z.string().optional(),
@@ -55,6 +55,7 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const { toast } = useToast()
+  const router = useRouter()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -75,6 +76,8 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
     setLogoPreview(url)
     form.setValue("logoUrl", url)
   }
+
+  const isLoading = form.formState.isSubmitting
 
   async function onSubmit(values: FormValues) {
     try {
@@ -100,6 +103,7 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
       setBannerPreview(null)
       setLogoPreview(null)
       onServerCreated?.()
+      router.refresh()
     } catch (error) {
       console.error("Error creating server:", error)
       toast({
@@ -140,10 +144,16 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
                       className="object-cover"
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                      <Button type="button" variant="secondary" size="sm" onClick={() => {
-                        setBannerPreview(null)
-                        form.setValue("bannerUrl", undefined)
-                      }}>
+                      <Button 
+                        type="button" 
+                        variant="secondary" 
+                        size="sm" 
+                        onClick={() => {
+                          setBannerPreview(null)
+                          form.setValue("bannerUrl", undefined)
+                        }}
+                        disabled={isLoading}
+                      >
                         <X className="mr-2 h-4 w-4" />
                         Remove
                       </Button>
@@ -155,6 +165,7 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
                       type="image"
                       onUpload={handleBannerUpload}
                       className="flex flex-col items-center gap-2"
+                      disabled={isLoading}
                     />
                     <p className="text-xs text-muted-foreground">Recommended: 16:9 aspect ratio</p>
                   </div>
@@ -176,6 +187,7 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
                           setLogoPreview(null)
                           form.setValue("logoUrl", undefined)
                         }}
+                        disabled={isLoading}
                       >
                         <X className="h-4 w-4 text-white" />
                       </button>
@@ -185,6 +197,7 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
                       type="image"
                       onUpload={handleLogoUpload}
                       className="flex h-full w-full items-center justify-center hover:bg-muted/50 transition-colors"
+                      disabled={isLoading}
                     />
                   )}
                 </div>
@@ -198,7 +211,7 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
                 <FormItem>
                   <FormLabel>Server Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter server name" {...field} />
+                    <Input placeholder="Enter server name" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -212,7 +225,7 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Describe your server" className="resize-none" {...field} />
+                    <Textarea placeholder="Describe your server" className="resize-none" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -230,29 +243,30 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                       className="grid grid-cols-3 gap-2"
+                      disabled={isLoading}
                     >
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="gaming" id="gaming" />
+                        <RadioGroupItem value="gaming" id="gaming" disabled={isLoading} />
                         <Label htmlFor="gaming">Gaming</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="technology" id="technology" />
+                        <RadioGroupItem value="technology" id="technology" disabled={isLoading} />
                         <Label htmlFor="technology">Technology</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="creative" id="creative" />
+                        <RadioGroupItem value="creative" id="creative" disabled={isLoading} />
                         <Label htmlFor="creative">Creative</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="education" id="education" />
+                        <RadioGroupItem value="education" id="education" disabled={isLoading} />
                         <Label htmlFor="education">Education</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="business" id="business" />
+                        <RadioGroupItem value="business" id="business" disabled={isLoading} />
                         <Label htmlFor="business">Business</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="other" id="other" />
+                        <RadioGroupItem value="other" id="other" disabled={isLoading} />
                         <Label htmlFor="other">Other</Label>
                       </div>
                     </RadioGroup>
@@ -268,14 +282,14 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
               render={({ field }) => (
                 <FormItem className="flex items-center space-x-2">
                   <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isLoading} />
                   </FormControl>
                   <FormLabel className="!mt-0">Make this server private</FormLabel>
                 </FormItem>
               )}
             />
 
-            <Button type="submit">Create Server</Button>
+            <Button type="submit" disabled={isLoading}>{isLoading ? "Creating..." : "Create Server"}</Button>
           </form>
         </Form>
       </DialogContent>
