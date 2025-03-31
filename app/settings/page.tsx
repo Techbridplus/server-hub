@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Slider } from "@/components/ui/slider"
-import { ThemeCustomizer } from "@/components/theme-customizer"
+import { ThemeToggle, ColorSchemeSelector } from "@/components/theme-customizer"
 
 export default function SettingsPage() {
   const { toast } = useToast()
@@ -456,7 +456,7 @@ export default function SettingsPage() {
 
                   <div className="space-y-4">
                     <h3 className="text-sm font-medium">Custom Theme</h3>
-                    <ThemeCustomizer />
+                    <ColorSchemeSelector />
                   </div>
 
                   <Separator />

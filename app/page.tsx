@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Search, Filter, Compass, TrendingUp, Star, History, Settings, Sparkles, Bookmark, Palette, LogOut, Bell, ChevronDown, LayoutGrid, Layout } from "lucide-react"
+import { Search, Compass, Bell, ChevronDown, LayoutGrid } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,14 +10,9 @@ import { ThemeToggle, ColorSchemeSelector } from "@/components/theme-customizer"
 import { CreateServerModal } from "@/components/create-server-modal"
 import { ServerCard } from "@/components/server-card"
 import { MobileNav } from "@/components/mobile-nav"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { signOut, useSession } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import { useInView } from "react-intersection-observer"
 import axios from "axios"
 import ServerSidebar from "@/components/server-sidebar"
@@ -126,11 +121,22 @@ export default function HomePage() {
   // Fetch my servers only if user is logged in
   useEffect(() => {
     const fetchMyServers = async () => {
-      if (!session?.user) return
+      if (!session?.user) {
+        console.log("No user session, skipping my servers fetch")
+        return
+      }
       
       try {
         const response = await axios.get<PaginatedResponse>(`/api/users/me/servers?owned=true&page=1&limit=10`)
-        setMyServers(response.data.servers || [])
+
+        
+        if (!response.data || !response.data.servers) {
+          console.error("Invalid response format for my servers:", response.data)
+          setMyServers([])
+          return
+        }
+
+        setMyServers(response.data.servers)
         if (response.data.pagination) {
           setHasMore(response.data.pagination.page < response.data.pagination.pages)
         } else {
@@ -144,6 +150,7 @@ export default function HomePage() {
           description: "Failed to load your servers. Please try again.",
           variant: "destructive",
         })
+        setMyServers([])
       } finally {
         setIsLoading(false)
       }
@@ -155,11 +162,21 @@ export default function HomePage() {
   // Fetch joined servers only if user is logged in
   useEffect(() => {
     const fetchJoinedServers = async () => {
-      if (!session?.user) return
+      if (!session?.user) {
+        console.log("No user session, skipping joined servers fetch")
+        return
+      }
       
       try {
         const response = await axios.get<PaginatedResponse>(`/api/users/me/servers?joined=true&page=1&limit=10`)
-        setJoinedServers(response.data.servers || [])
+        
+        if (!response.data || !response.data.servers) {
+          console.error("Invalid response format for joined servers:", response.data)
+          setJoinedServers([])
+          return
+        }
+
+        setJoinedServers(response.data.servers)
         if (response.data.pagination) {
           setHasMore(response.data.pagination.page < response.data.pagination.pages)
         } else {
@@ -173,6 +190,7 @@ export default function HomePage() {
           description: "Failed to load joined servers. Please try again.", 
           variant: "destructive",
         })
+        setJoinedServers([])
       } finally {
         setIsLoading(false)
       }
@@ -213,20 +231,26 @@ export default function HomePage() {
             setFilteredServers(prev => [...prev, ...newServers])
             break
           case "my-servers":
+            console.log("Loading more my servers...")
             response = await axios.get<PaginatedResponse>(`/api/users/me/servers?owned=true&page=${nextPage}&limit=10`)
-            // Filter out duplicates before adding new servers
-            const newMyServers = response.data.servers.filter(
-              newServer => !myServers.some(existingServer => existingServer.id === newServer.id)
-            )
-            setMyServers(prev => [...prev, ...newMyServers])
+            console.log("More My Servers Response:", response.data)
+            if (response.data.servers) {
+              const newMyServers = response.data.servers.filter(
+                newServer => !myServers.some(existingServer => existingServer.id === newServer.id)
+              )
+              setMyServers(prev => [...prev, ...newMyServers])
+            }
             break
           case "joined":
+            console.log("Loading more joined servers...")
             response = await axios.get<PaginatedResponse>(`/api/users/me/servers?joined=true&page=${nextPage}&limit=10`)
-            // Filter out duplicates before adding new servers
-            const newJoinedServers = response.data.servers.filter(
-              newServer => !joinedServers.some(existingServer => existingServer.id === newServer.id)
-            )
-            setJoinedServers(prev => [...prev, ...newJoinedServers])
+            console.log("More Joined Servers Response:", response.data)
+            if (response.data.servers) {
+              const newJoinedServers = response.data.servers.filter(
+                newServer => !joinedServers.some(existingServer => existingServer.id === newServer.id)
+              )
+              setJoinedServers(prev => [...prev, ...newJoinedServers])
+            }
             break
         }
 

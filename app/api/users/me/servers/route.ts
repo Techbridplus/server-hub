@@ -9,6 +9,9 @@ export async function GET(req: NextRequest) {
       const { searchParams } = new URL(req.url)
       const owned = searchParams.get("owned") === "true"
       const joined = searchParams.get("joined") === "true"
+      const page = Number(searchParams.get("page") || "1")
+      const limit = Number(searchParams.get("limit") || "10")
+      const skip = (page - 1) * limit
 
       // Build the where clause based on query parameters
       const where: any = {}
@@ -35,28 +38,41 @@ export async function GET(req: NextRequest) {
         ]
       }
 
-      const servers = await prisma.server.findMany({
-        where,
-        include: {
-          owner: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
+      const [servers, total] = await Promise.all([
+        prisma.server.findMany({
+          where,
+          include: {
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+            _count: {
+              select: {
+                members: true,
+              },
             },
           },
-          _count: {
-            select: {
-              members: true,
-            },
+          skip,
+          take: limit,
+          orderBy: {
+            createdAt: "desc",
           },
-        },
-        orderBy: {
-          createdAt: "desc",
+        }),
+        prisma.server.count({ where })
+      ])
+
+      return NextResponse.json({
+        servers,
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit),
         },
       })
-
-      return NextResponse.json(servers)
     } catch (error) {
       console.error("Error fetching user servers:", error)
       return NextResponse.json({ error: "Failed to fetch servers" }, { status: 500 })

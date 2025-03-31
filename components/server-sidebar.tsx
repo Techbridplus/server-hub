@@ -25,7 +25,7 @@ function ServerSidebar() {
     useEffect(() => {
         if (session) {
             axios.get("/api/users/me/servers?owned=true")
-                .then((data) => setMyServers(data.data || []))
+                .then((data) => setMyServers(data.data.servers || []))
                 .catch((err) => console.error("Error fetching my servers:", err))
                 .finally(() => setIsLoading(false))
         }else{
@@ -36,14 +36,15 @@ function ServerSidebar() {
     useEffect(() => {
         if (session) {
             axios.get("/api/users/me/servers?joined=true")
-                .then((data) => setJoinedServers(data.data || []))
+                .then((data) => setJoinedServers(data.data.servers || []))
                 .catch((err) => console.error("Error fetching joined servers:", err))
                 .finally(() => setIsLoading(false))
         }else{
             setIsLoading(false)
         }
     }, [session])
-
+    console.log("joinedServers",joinedServers)
+    console.log("myServers",myServers)
 
     return (
         <aside className="hidden w-64 flex-col border-r bg-muted/40 md:flex">
