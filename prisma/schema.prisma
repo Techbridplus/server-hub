@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  servers       Server[]
+  serverMembers ServerMember[]
+  groupMembers  GroupMember[]
+  savedServers  SavedServer[]
+  twoFactorAuth TwoFactorAuth?
+  eventAttendees EventAttendee[]
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model VerificationToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model TwoFactorAuth {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @unique @db.ObjectId
+  secret      String
+  enabled     Boolean  @default(false)
+  backupCodes String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Server {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  imageUrl    String?
+  bannerUrl   String?
+  category    String
+  isPrivate   Boolean  @default(false)
+  isExclusive Boolean  @default(false)
+  accessKey   String?
+  ownerId     String   @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner        User           @relation(fields: [ownerId], references: [id])
+  members      ServerMember[]
+  events       Event[]
+  groups       Group[]
+  announcements Announcement[]
+  tags         ServerTag[]
+  savedBy      SavedServer[]
+}
+
+model ServerMember {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  serverId  String   @db.ObjectId
+  role      String   @default("member") // admin, moderator, member
+  joinedAt  DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  server Server @relation(fields: [serverId], references: [id])
+}
+
+model ServerTag {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  serverId String @db.ObjectId
+
+  server Server @relation(fields: [serverId], references: [id])
+}
+
+model SavedServer {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String   @db.ObjectId
+  serverId String   @db.ObjectId
+  savedAt  DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  server Server @relation(fields: [serverId], references: [id])
+}
+
+model Event {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  location    String?
+  imageUrl    String?
+  serverId    String   @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  server    Server        @relation(fields: [serverId], references: [id])
+  attendees EventAttendee[]
+  photos    EventPhoto[]
+  videos    EventVideo[]
+  comments  EventComment[]
+}
+
+model EventAttendee {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String   @db.ObjectId
+  eventId  String   @db.ObjectId
+  status   String   @default("going") // going, maybe, not_going
+  addedAt  DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+}
+
+model EventPhoto {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  url         String
+  caption     String?
+  uploadedBy  String
+  eventId     String   @db.ObjectId
+  uploadedAt  DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
+}
+
+model EventVideo {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  url         String
+  caption     String?
+  uploadedBy  String
+  eventId     String   @db.ObjectId
+  uploadedAt  DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
+}
+
+model EventComment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  content   String
+  userId    String   @db.ObjectId
+  eventId   String   @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id])
+}
+
+model Group {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  imageUrl    String?
+  isPrivate   Boolean  @default(false)
+  serverId    String   @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  server   Server        @relation(fields: [serverId], references: [id])
+  members  GroupMember[]
+  channels Channel[]
+}
+
+model GroupMember {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String   @db.ObjectId
+  groupId  String   @db.ObjectId
+  role     String   @default("member") // admin, moderator, member
+  joinedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id])
+}
+
+model Channel {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  type        String   @default("text") // text, voice, video
+  groupId     String   @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  group    Group     @relation(fields: [groupId], references: [id])
+  messages Message[]
+}
+
+model Message {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  content   String
+  userId    String   @db.ObjectId
+  channelId String   @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  channel Channel @relation(fields: [channelId], references: [id])
+}
+
+model Announcement {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  content   String
+  userId    String   @db.ObjectId
+  serverId  String   @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  server   Server              @relation(fields: [serverId], references: [id])
+  comments AnnouncementComment[]
+}
+
+model AnnouncementComment {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  content       String
+  userId        String   @db.ObjectId
+  announcementId String   @db.ObjectId
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  announcement Announcement @relation(fields: [announcementId], references: [id])
+}
