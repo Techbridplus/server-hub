@@ -12,26 +12,27 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "@/components/ui/use-toast"
+import { useStore } from "@/hooks/use-store"
 
+interface Server {
+  id: string
+  name: string
+  description: string
+  category: string  
+  isExclusive: boolean
+  bannerUrl: string
+  imageUrl: string
+}
 interface EditServerFormProps {
-  serverId: string
+  server: Server
   onSave: () => void
 }
 
-export function EditServerForm({ serverId, onSave }: EditServerFormProps) {
+export function EditServerForm({ server, onSave }: EditServerFormProps) {
   // Mock data for demonstration
-  const [server, setServer] = useState({
-    id: serverId,
-    name: "Gaming Hub",
-    description:
-      "A community for gamers to connect, share tips, and organize gaming events. Join us for tournaments, game nights, and discussions about the latest releases.",
-    category: "gaming",
-    isExclusive: true,
-    bannerUrl: "/placeholder.svg?height=300&width=1200",
-    logoUrl: "/placeholder.svg?height=100&width=100",
-  })
 
   const [isLoading, setIsLoading] = useState(false)
+  const {ServerData,role} = useStore();
 
   const handleSave = () => {
     setIsLoading(true)
@@ -48,10 +49,10 @@ export function EditServerForm({ serverId, onSave }: EditServerFormProps) {
   }
 
   const handleChange = (field: string, value: string | boolean) => {
-    setServer({
-      ...server,
-      [field]: value,
-    })
+    // setServer({
+    //   ...server,
+    //   [field]: value,
+    // })
   }
 
   return (
@@ -63,15 +64,15 @@ export function EditServerForm({ serverId, onSave }: EditServerFormProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-2">
-            <Label htmlFor="name">Server Name</Label>
-            <Input id="name" value={server.name} onChange={(e) => handleChange("name", e.target.value)} />
+            <Label htmlFor="name">{ServerData?.name}</Label>
+            <Input id="name" value={ServerData?.name} onChange={(e) => handleChange("name", e.target.value)} />
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{ServerData?.description}</Label>
             <Textarea
               id="description"
-              value={server.description}
+              value={ServerData?.description || ""}
               onChange={(e) => handleChange("description", e.target.value)}
               className="min-h-[120px]"
             />
@@ -134,7 +135,7 @@ export function EditServerForm({ serverId, onSave }: EditServerFormProps) {
             <Label>Server Logo</Label>
             <div className="flex items-center gap-4">
               <div className="relative h-24 w-24 overflow-hidden rounded-lg border">
-                <Image src={server.logoUrl || "/placeholder.svg"} alt="Server logo" fill className="object-cover" />
+                <Image src={server.imageUrl || "/placeholder.svg"} alt="Server logo" fill className="object-cover" />
                 <Button
                   variant="ghost"
                   size="icon"

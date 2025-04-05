@@ -68,279 +68,279 @@ export default function HomePage() {
   const { ref, inView } = useInView()
 
   // Fetch categories
-  // useEffect(() => {
-  //   const fetchCategories = async () => {
-  //     setIsLoading(true)
-  //     try {
-  //       const response = await axios.get("/api/categories")
-  //       setCategories([{ id: "all", name: "All", count: 0 }, ...response.data])
-  //     } catch (error) {
-  //       console.error("Error fetching categories:", error)
-  //       toast({
-  //         title: "Error",
-  //         description: "Failed to load categories. Please try again.",
-  //         variant: "destructive",
-  //       })
-  //     } finally {
-  //       setIsLoading(false)
-  //     }
-  //   }
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setIsLoading(true)
+      try {
+        const response = await axios.get("/api/categories")
+        setCategories([{ id: "all", name: "All", count: 0 }, ...response.data])
+      } catch (error) {
+        console.error("Error fetching categories:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load categories. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-  //   fetchCategories()
-  // }, [toast])
+    fetchCategories()
+  }, [toast])
 
-  // Fetch all servers for discover tab
-  // useEffect(() => {
-  //   const fetchAllServers = async () => {
-  //     setIsLoading(true)
-  //     try {
-  //       const response = await axios.get<PaginatedResponse>("/api/servers?page=1&limit=10&includePrivate=true&showAll=true")
-  //       setAllServers(response.data.servers || [])
-  //       setFilteredServers(response.data.servers || [])
-  //       if (response.data.pagination) {
-  //         setHasMore(response.data.pagination.page < response.data.pagination.pages)
-  //       } else {
-  //         setHasMore(false)
-  //       }
-  //       setCurrentPage(1)
-  //     } catch (error) {
-  //       console.error("Error fetching servers:", error)
-  //       toast({
-  //         title: "Error",
-  //         description: "Failed to load servers. Please try again.",
-  //         variant: "destructive",
-  //       })
-  //     } finally {
-  //       setIsLoading(false)
-  //     }
-  //   }
+  //Fetch all servers for discover tab
+  useEffect(() => {
+    const fetchAllServers = async () => {
+      setIsLoading(true)
+      try {
+        const response = await axios.get<PaginatedResponse>("/api/servers?page=1&limit=10&includePrivate=true&showAll=true")
+        setAllServers(response.data.servers || [])
+        setFilteredServers(response.data.servers || [])
+        if (response.data.pagination) {
+          setHasMore(response.data.pagination.page < response.data.pagination.pages)
+        } else {
+          setHasMore(false)
+        }
+        setCurrentPage(1)
+      } catch (error) {
+        console.error("Error fetching servers:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load servers. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-  //   fetchAllServers()
-  // }, [toast])
+    fetchAllServers()
+  }, [toast])
 
-  // Fetch my servers only if user is logged in
-  // useEffect(() => {
-  //   const fetchMyServers = async () => {
-  //     if (!session?.user) {
-  //       console.log("No user session, skipping my servers fetch")
-  //       return
-  //     }
+  //Fetch my servers only if user is logged in
+  useEffect(() => {
+    const fetchMyServers = async () => {
+      if (!session?.user) {
+        console.log("No user session, skipping my servers fetch")
+        return
+      }
       
-  //     try {
-  //       const response = await axios.get<PaginatedResponse>(`/api/users/me/servers?owned=true&page=1&limit=10`)
+      try {
+        const response = await axios.get<PaginatedResponse>(`/api/users/me/servers?owned=true&page=1&limit=10`)
 
         
-  //       if (!response.data || !response.data.servers) {
-  //         console.error("Invalid response format for my servers:", response.data)
-  //         setMyServers([])
-  //         return
-  //       }
+        if (!response.data || !response.data.servers) {
+          console.error("Invalid response format for my servers:", response.data)
+          setMyServers([])
+          return
+        }
 
-  //       setMyServers(response.data.servers)
-  //       if (response.data.pagination) {
-  //         setHasMore(response.data.pagination.page < response.data.pagination.pages)
-  //       } else {
-  //         setHasMore(false)
-  //       }
-  //       setCurrentPage(1)
-  //     } catch (error) {
-  //       console.error("Error fetching my servers:", error)
-  //       toast({
-  //         title: "Error", 
-  //         description: "Failed to load your servers. Please try again.",
-  //         variant: "destructive",
-  //       })
-  //       setMyServers([])
-  //     } finally {
-  //       setIsLoading(false)
-  //     }
-  //   }
+        setMyServers(response.data.servers)
+        if (response.data.pagination) {
+          setHasMore(response.data.pagination.page < response.data.pagination.pages)
+        } else {
+          setHasMore(false)
+        }
+        setCurrentPage(1)
+      } catch (error) {
+        console.error("Error fetching my servers:", error)
+        toast({
+          title: "Error", 
+          description: "Failed to load your servers. Please try again.",
+          variant: "destructive",
+        })
+        setMyServers([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-  //   fetchMyServers()
-  // }, [session, toast])
+    fetchMyServers()
+  }, [session, toast])
 
-  // // Fetch joined servers only if user is logged in
-  // useEffect(() => {
-  //   const fetchJoinedServers = async () => {
-  //     if (!session?.user) {
-  //       console.log("No user session, skipping joined servers fetch")
-  //       return
-  //     }
+  // Fetch joined servers only if user is logged in
+  useEffect(() => {
+    const fetchJoinedServers = async () => {
+      if (!session?.user) {
+        console.log("No user session, skipping joined servers fetch")
+        return
+      }
       
-  //     try {
-  //       const response = await axios.get<PaginatedResponse>(`/api/users/me/servers?joined=true&page=1&limit=10`)
+      try {
+        const response = await axios.get<PaginatedResponse>(`/api/users/me/servers?joined=true&page=1&limit=10`)
         
-  //       if (!response.data || !response.data.servers) {
-  //         console.error("Invalid response format for joined servers:", response.data)
-  //         setJoinedServers([])
-  //         return
-  //       }
+        if (!response.data || !response.data.servers) {
+          console.error("Invalid response format for joined servers:", response.data)
+          setJoinedServers([])
+          return
+        }
 
-  //       setJoinedServers(response.data.servers)
-  //       if (response.data.pagination) {
-  //         setHasMore(response.data.pagination.page < response.data.pagination.pages)
-  //       } else {
-  //         setHasMore(false)
-  //       }
-  //       setCurrentPage(1)
-  //     } catch (error) {
-  //       console.error("Error fetching joined servers:", error)
-  //       toast({
-  //         title: "Error",
-  //         description: "Failed to load joined servers. Please try again.", 
-  //         variant: "destructive",
-  //       })
-  //       setJoinedServers([])
-  //     } finally {
-  //       setIsLoading(false)
-  //     }
-  //   }
+        setJoinedServers(response.data.servers)
+        if (response.data.pagination) {
+          setHasMore(response.data.pagination.page < response.data.pagination.pages)
+        } else {
+          setHasMore(false)
+        }
+        setCurrentPage(1)
+      } catch (error) {
+        console.error("Error fetching joined servers:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load joined servers. Please try again.", 
+          variant: "destructive",
+        })
+        setJoinedServers([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-  //   fetchJoinedServers()
-  // }, [session, toast])
+    fetchJoinedServers()
+  }, [session, toast])
 
-  // // Load more servers when scrolling
-  // useEffect(() => {
-  //   const loadMore = async () => {
-  //     if (isLoadingMore || !hasMore) return
+  // Load more servers when scrolling
+  useEffect(() => {
+    const loadMore = async () => {
+      if (isLoadingMore || !hasMore) return
 
-  //     setIsLoadingMore(true)
-  //     const nextPage = currentPage + 1
+      setIsLoadingMore(true)
+      const nextPage = currentPage + 1
 
-  //     try {
-  //       let response: { data: PaginatedResponse } = {
-  //         data: {
-  //           servers: [],
-  //           categories: [],
-  //           pagination: {
-  //             total: 0,
-  //             page: 1,
-  //             limit: 10,
-  //             pages: 1
-  //           }
-  //         }
-  //       }
-  //       switch (activeTab) {
-  //         case "discover":
-  //           response = await axios.get<PaginatedResponse>(`/api/servers?page=${nextPage}&limit=10&includePrivate=true&showAll=true`)
-  //           // Filter out duplicates before adding new servers
-  //           const newServers = response.data.servers.filter(
-  //             newServer => !allServers.some(existingServer => existingServer.id === newServer.id)
-  //           )
-  //           setAllServers(prev => [...prev, ...newServers])
-  //           setFilteredServers(prev => [...prev, ...newServers])
-  //           break
-  //         case "my-servers":
-  //           console.log("Loading more my servers...")
-  //           response = await axios.get<PaginatedResponse>(`/api/users/me/servers?owned=true&page=${nextPage}&limit=10`)
-  //           console.log("More My Servers Response:", response.data)
-  //           if (response.data.servers) {
-  //             const newMyServers = response.data.servers.filter(
-  //               newServer => !myServers.some(existingServer => existingServer.id === newServer.id)
-  //             )
-  //             setMyServers(prev => [...prev, ...newMyServers])
-  //           }
-  //           break
-  //         case "joined":
-  //           console.log("Loading more joined servers...")
-  //           response = await axios.get<PaginatedResponse>(`/api/users/me/servers?joined=true&page=${nextPage}&limit=10`)
-  //           console.log("More Joined Servers Response:", response.data)
-  //           if (response.data.servers) {
-  //             const newJoinedServers = response.data.servers.filter(
-  //               newServer => !joinedServers.some(existingServer => existingServer.id === newServer.id)
-  //             )
-  //             setJoinedServers(prev => [...prev, ...newJoinedServers])
-  //           }
-  //           break
-  //       }
+      try {
+        let response: { data: PaginatedResponse } = {
+          data: {
+            servers: [],
+            categories: [],
+            pagination: {
+              total: 0,
+              page: 1,
+              limit: 10,
+              pages: 1
+            }
+          }
+        }
+        switch (activeTab) {
+          case "discover":
+            response = await axios.get<PaginatedResponse>(`/api/servers?page=${nextPage}&limit=10&includePrivate=true&showAll=true`)
+            // Filter out duplicates before adding new servers
+            const newServers = response.data.servers.filter(
+              newServer => !allServers.some(existingServer => existingServer.id === newServer.id)
+            )
+            setAllServers(prev => [...prev, ...newServers])
+            setFilteredServers(prev => [...prev, ...newServers])
+            break
+          case "my-servers":
+            console.log("Loading more my servers...")
+            response = await axios.get<PaginatedResponse>(`/api/users/me/servers?owned=true&page=${nextPage}&limit=10`)
+            console.log("More My Servers Response:", response.data)
+            if (response.data.servers) {
+              const newMyServers = response.data.servers.filter(
+                newServer => !myServers.some(existingServer => existingServer.id === newServer.id)
+              )
+              setMyServers(prev => [...prev, ...newMyServers])
+            }
+            break
+          case "joined":
+            console.log("Loading more joined servers...")
+            response = await axios.get<PaginatedResponse>(`/api/users/me/servers?joined=true&page=${nextPage}&limit=10`)
+            console.log("More Joined Servers Response:", response.data)
+            if (response.data.servers) {
+              const newJoinedServers = response.data.servers.filter(
+                newServer => !joinedServers.some(existingServer => existingServer.id === newServer.id)
+              )
+              setJoinedServers(prev => [...prev, ...newJoinedServers])
+            }
+            break
+        }
 
-  //       if (response?.data?.pagination) {
-  //         setHasMore(response.data.pagination.page < response.data.pagination.pages)
-  //         setCurrentPage(nextPage)
-  //       } else {
-  //         setHasMore(false)
-  //       }
-  //     } catch (error) {
-  //       console.error("Error loading more servers:", error)
-  //       toast({
-  //         title: "Error",
-  //         description: "Failed to load more servers. Please try again.",
-  //         variant: "destructive",
-  //       })
-  //     } finally {
-  //       setIsLoadingMore(false)
-  //     }
-  //   }
+        if (response?.data?.pagination) {
+          setHasMore(response.data.pagination.page < response.data.pagination.pages)
+          setCurrentPage(nextPage)
+        } else {
+          setHasMore(false)
+        }
+      } catch (error) {
+        console.error("Error loading more servers:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load more servers. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoadingMore(false)
+      }
+    }
 
-  //   if (inView) {
-  //     loadMore()
-  //   }
-  // }, [inView, activeTab, currentPage, hasMore, isLoadingMore, toast, allServers, myServers, joinedServers])
+    if (inView) {
+      loadMore()
+    }
+  }, [inView, activeTab, currentPage, hasMore, isLoadingMore, toast, allServers, myServers, joinedServers])
 
-  // // Reset pagination when changing tabs
-  // useEffect(() => {
-  //   setCurrentPage(1)
-  //   setHasMore(true)
-  // }, [activeTab])
+  // Reset pagination when changing tabs
+  useEffect(() => {
+    setCurrentPage(1)
+    setHasMore(true)
+  }, [activeTab])
 
-  // // Filter servers based on category and search query
-  // useEffect(() => {
-  //   let filtered = [...allServers]
-  //   console.log("Active Category:", activeCategory)
-  //   console.log("All Servers:", allServers)
+  // Filter servers based on category and search query
+  useEffect(() => {
+    let filtered = [...allServers]
+    console.log("Active Category:", activeCategory)
+    console.log("All Servers:", allServers)
 
-  //   // Apply category filter
-  //   if (activeCategory !== "All") {
-  //     filtered = filtered.filter(server => {
-  //       console.log("Server Category:", server.category)
-  //       return server.category === activeCategory
-  //     })
-  //   }
+    // Apply category filter
+    if (activeCategory !== "All") {
+      filtered = filtered.filter(server => {
+        console.log("Server Category:", server.category)
+        return server.category === activeCategory
+      })
+    }
 
-  //   // Apply search filter
-  //   if (searchQuery) {
-  //     const query = searchQuery.toLowerCase()
-  //     filtered = filtered.filter(server => 
-  //       server.name.toLowerCase().includes(query) ||
-  //       server.description?.toLowerCase().includes(query) ||
-  //       server.tags?.some(tag => tag.toLowerCase().includes(query))
-  //     )
-  //   }
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(server => 
+        server.name.toLowerCase().includes(query) ||
+        server.description?.toLowerCase().includes(query) ||
+        server.tags?.some(tag => tag.toLowerCase().includes(query))
+      )
+    }
 
-  //   console.log("Filtered Servers:", filtered)
-  //   setFilteredServers(filtered)
-  // }, [allServers, activeCategory, searchQuery])
+    console.log("Filtered Servers:", filtered)
+    setFilteredServers(filtered)
+  }, [allServers, activeCategory, searchQuery])
 
-  // // Handle category change
-  // const handleCategoryChange = async (category: string) => {
-  //   setActiveCategory(category)
-  //   setIsLoading(true)
-  //   try {
-  //     const url = category === "All" 
-  //       ? "/api/servers?page=1&limit=10&includePrivate=true&showAll=true"
-  //       : `/api/servers?page=1&limit=10&includePrivate=true&category=${category}`
+  // Handle category change
+  const handleCategoryChange = async (category: string) => {
+    setActiveCategory(category)
+    setIsLoading(true)
+    try {
+      const url = category === "All" 
+        ? "/api/servers?page=1&limit=10&includePrivate=true&showAll=true"
+        : `/api/servers?page=1&limit=10&includePrivate=true&category=${category}`
       
-  //     const response = await axios.get<PaginatedResponse>(url)
-  //     // Reset the lists with new servers
-  //     setAllServers(response.data.servers || [])
-  //     setFilteredServers(response.data.servers || [])
-  //     if (response.data.pagination) {
-  //       setHasMore(response.data.pagination.page < response.data.pagination.pages)
-  //     } else {
-  //       setHasMore(false)
-  //     }
-  //     setCurrentPage(1)
-  //   } catch (error) {
-  //     console.error("Error fetching servers for category:", error)
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to load servers for this category. Please try again.",
-  //       variant: "destructive",
-  //     })
-  //   } finally {
-  //     setIsLoading(false)
-  //   }
-  // }
+      const response = await axios.get<PaginatedResponse>(url)
+      // Reset the lists with new servers
+      setAllServers(response.data.servers || [])
+      setFilteredServers(response.data.servers || [])
+      if (response.data.pagination) {
+        setHasMore(response.data.pagination.page < response.data.pagination.pages)
+      } else {
+        setHasMore(false)
+      }
+      setCurrentPage(1)
+    } catch (error) {
+      console.error("Error fetching servers for category:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load servers for this category. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="flex h-screen bg-background">

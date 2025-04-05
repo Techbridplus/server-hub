@@ -1,0 +1,117 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { authMiddlewareAppRouter, isServerMember } from "@/lib/auth"
+//import { prisma } from "@/lib/prisma"
+
+// GET /api/servers/[serverId]/events/[eventId]/videos - Get event videos
+export async function GET(req: NextRequest, { params }: { params: { serverId: string; eventId: string } }) {
+const prisma = {};
+  try {
+    const { serverId, eventId } = params
+    const { searchParams } = new URL(req.url)
+    const page = Number.parseInt(searchParams.get("page") || "1")
+    const limit = Number.parseInt(searchParams.get("limit") || "8")
+    const skip = (page - 1) * limit
+
+    // Get videos with pagination
+    const videos = await prisma.video.findMany({
+      where: {
+        eventId,
+        event: {
+          serverId,
+        },
+      },
+      include: {
+        uploader: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+      skip,
+      take: limit,
+      orderBy: {
+        uploadedAt: "desc",
+      },
+    })
+
+    // Get total count for pagination
+    const total = await prisma.video.count({
+      where: {
+        eventId,
+        event: {
+          serverId,
+        },
+      },
+    })
+
+    return NextResponse.json({
+      videos,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
+    })
+  } catch (error) {
+    console.error("Error fetching videos:", error)
+    return NextResponse.json({ error: "Failed to fetch videos" }, { status: 500 })
+  }
+}
+
+// POST /api/servers/[serverId]/events/[eventId]/videos - Upload a video
+export async function POST(req: NextRequest, { params }: { params: { serverId: string; eventId: string } }) {
+  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+    try {
+      const { serverId, eventId } = params
+      const { title, url, thumbnail, duration, description } = await req.json()
+
+      // Check if user is server member
+      const isMember = await isServerMember(session.user.id, serverId)
+      if (!isMember) {
+        return NextResponse.json({ error: "You must be a member to upload videos" }, { status: 403 })
+      }
+
+      // Check if event exists
+      const event = await prisma.event.findUnique({
+        where: {
+          id: eventId,
+          serverId,
+        },
+      })
+
+      if (!event) {
+        return NextResponse.json({ error: "Event not found" }, { status: 404 })
+      }
+
+      // Create video
+      const video = await prisma.video.create({
+        data: {
+          title,
+          url,
+          thumbnail,
+          duration,
+          description,
+          uploader: {
+            connect: {
+              id: session.user.id,
+            },
+          },
+          event: {
+            connect: {
+              id: eventId,
+            },
+          },
+        },
+      })
+
+      return NextResponse.json(video)
+    } catch (error) {
+      console.error("Error uploading video:", error)
+      return NextResponse.json({ error: "Failed to upload video" }, { status: 500 })
+    }
+  })
+}
+
