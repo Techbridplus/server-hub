@@ -26,6 +26,7 @@ model User {
   savedServers  SavedServer[]
   twoFactorAuth TwoFactorAuth?
   eventAttendees EventAttendee[]
+  scheduledDeletions ScheduledDeletion[]
 }
 
 model Account {
@@ -97,6 +98,7 @@ model Server {
   announcements Announcement[]
   tags         ServerTag[]
   savedBy      SavedServer[]
+  scheduledDeletions ScheduledDeletion[]
 }
 
 enum MemberRole {
@@ -114,7 +116,7 @@ model ServerMember {
   joinedAt  DateTime @default(now())
 
   user   User   @relation(fields: [userId], references: [id])
-  server Server @relation(fields: [serverId], references: [id])
+  server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
 }
 
 model ServerTag {
@@ -271,4 +273,19 @@ model AnnouncementComment {
   updatedAt     DateTime @updatedAt
 
   announcement Announcement @relation(fields: [announcementId], references: [id])
+}
+
+model ScheduledDeletion {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  serverId    String   @db.ObjectId
+  userId      String   @db.ObjectId
+  scheduledFor DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([serverId])
+  @@index([userId])
 }

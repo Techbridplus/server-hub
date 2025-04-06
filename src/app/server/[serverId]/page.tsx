@@ -16,7 +16,7 @@ import { ShareDialog } from "@/components/share-dialog"
 import { CreateEventDialog } from "@/components/create-event-dialog"
 import { CreateAnnouncementDialog } from "@/components/create-announcement-dialog"
 import { CreateGroupDialog } from "@/components/create-group-dialog"
-import { ManageMembersDialog } from "@/components/manage-members-dialog"
+import { MembersDialog } from "@/components/manage-members-dialog"
 import { PrivateServerAccessDialog } from "@/components/private-server-access-dialog"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
@@ -300,9 +300,9 @@ export default function ServerPage() {
                     Edit Server
                   </Link>
                 </Button>
-                <ManageMembersDialog serverId={serverId} />
               </>
             )}
+            <MembersDialog serverId={serverId} />
             {userRole==MemberRole.VISITOR && (
               <Button className="flex-1 sm:flex-none" onClick={handleJoinServer}>
                 {server.isPrivate ? (

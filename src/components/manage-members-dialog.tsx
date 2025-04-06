@@ -17,12 +17,13 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { ServerMember } from "@prisma/client"
 
-interface ManageMembersDialogProps {
+interface MembersDialogProps {
   serverId: string
 }
 
-export function ManageMembersDialog({ serverId }: ManageMembersDialogProps) {
+export function MembersDialog({ serverId }: MembersDialogProps) {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
