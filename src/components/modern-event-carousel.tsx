@@ -95,25 +95,22 @@ export function ModernEventCarousel({ events, serverId }: ModernEventCarouselPro
 
   return (
     <div
-      className="relative overflow-hidden rounded-lg"
+      className="relative overflow-hidden rounded-lg w-full md:h-[450px] " // Enforce 16:9 aspect ratio
       ref={carouselRef}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       <div
-        className="flex transition-transform duration-500 ease-out"
+        className="flex transition-transform duration-500 ease-out h-full"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {events.map((event, index) => (
           <div
             key={event.id}
-            className={cn(
-              "min-w-full p-1 transition-opacity duration-500 md:min-w-[50%] lg:min-w-[33.333%]",
-              index === currentIndex ? "opacity-100" : "opacity-70",
-            )}
+            className="min-w-full h-full p-1" // Ensure each card takes full width
           >
-            <div className="transform transition-transform duration-500 hover:scale-[1.02]">
+            <div className="transform transition-transform duration-500 hover:scale-[1.02] h-full">
               <EventCard event={event} serverId={serverId} />
             </div>
           </div>

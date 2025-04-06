@@ -170,7 +170,7 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
         isExclusive,
         maxAttendees: parseInt(maxAttendees, 10),
         eventType,
-        bannerImage, // Include banner image in the event data
+        imageUrl:bannerImage, // Include banner image in the event data
       }
 
       // Send API request

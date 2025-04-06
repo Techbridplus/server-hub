@@ -14,8 +14,10 @@ interface EventCardProps {
 
 export function EventCard({ event, isPast = false, serverId }: EventCardProps) {
   return (
-    <Card className={`overflow-hidden transition-all hover:shadow-md ${event.isExclusive ? "border-primary/50" : ""}`}>
-      <div className="relative h-40 w-full">
+    <Card 
+    className={`overflow-hidden transition-all hover:shadow-md h-full ${event.isExclusive ? "border-primary/50" : ""}`}
+    >
+      <div className="relative h-full w-full ">
         <Image src={event.imageUrl || "/placeholder.svg"} alt={event.title} fill className="object-cover" />
         {event.isExclusive && (
           <div className="absolute right-2 top-2">
@@ -25,33 +27,35 @@ export function EventCard({ event, isPast = false, serverId }: EventCardProps) {
             </Badge>
           </div>
         )}
+        <div className="absolute bottom-0 left-0 w-[250px] bg-background/80 backdrop-blur-sm flex flex-col justify-between border border-muted p-2 rounded-md">
+          <CardHeader className="pb-2">
+            <h3 className="font-semibold">{event.title}</h3>
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <CalendarDays className="h-3.5 w-3.5" />
+              <span>{new Date(event.startDate).toLocaleDateString('en-GB')} {new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          </CardHeader>
+          {/* <CardContent className="pb-2">
+            <div className="flex items-center gap-1 text-sm">
+              <Users className="h-3.5 w-3.5" />
+              <span>{event.} attendees</span>
+            </div>
+          </CardContent> */}
+          <CardFooter>
+            {serverId ? (
+              <Link href={`/server/${serverId}/event/${event.id}`} className="w-full">
+                <Button variant={isPast ? "outline" : "default"} className="w-[60px]">
+                  {isPast ? "View Recap" : "RSVP"}
+                </Button>
+              </Link>
+            ) : (
+              <Button variant={isPast ? "outline" : "default"} className="w-full">
+                {isPast ? "View Recap" : "RSVP"}
+              </Button>
+            )}
+          </CardFooter>
+        </div>
       </div>
-      <CardHeader className="pb-2">
-        <h3 className="font-semibold">{event.title}</h3>
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <CalendarDays className="h-3.5 w-3.5" />
-          <span>{event.date}</span>
-        </div>
-      </CardHeader>
-      <CardContent className="pb-2">
-        <div className="flex items-center gap-1 text-sm">
-          <Users className="h-3.5 w-3.5" />
-          <span>{event.attendees} attendees</span>
-        </div>
-      </CardContent>
-      <CardFooter>
-        {serverId ? (
-          <Link href={`/server/${serverId}/event/${event.id}`} className="w-full">
-            <Button variant={isPast ? "outline" : "default"} className="w-full">
-              {isPast ? "View Recap" : "RSVP"}
-            </Button>
-          </Link>
-        ) : (
-          <Button variant={isPast ? "outline" : "default"} className="w-full">
-            {isPast ? "View Recap" : "RSVP"}
-          </Button>
-        )}
-      </CardFooter>
     </Card>
   )
 }
