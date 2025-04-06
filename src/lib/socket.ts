@@ -1,57 +1,124 @@
-import type { Server as NetServer } from "http"
-import type { NextApiRequest } from "next"
-import { Server as ServerIO } from "socket.io"
-import type { NextApiResponseServerIO } from "@/types/next"
+import { Server as NetServer } from "http"
+import { Server as SocketIOServer, Socket } from "socket.io"
+import { NextApiResponse } from "next"
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
+interface MemberStatusUpdate {
+  userId: string
+  status: "online" | "offline" | "idle" | "dnd"
+  serverId: string
 }
 
-export const initializeSocket = (req: NextApiRequest, res: NextApiResponseServerIO) => {
+interface MemberRoleUpdate {
+  memberId: string
+  role: "ADMIN" | "MODERATOR" | "MEMBER"
+  serverId: string
+}
+
+interface MemberKicked {
+  memberId: string
+  serverId: string
+}
+
+interface DirectMessage {
+  id: string
+  content: string
+  senderId: string
+  receiverId: string
+  createdAt: string
+}
+
+interface CallSignal {
+  type: "offer" | "answer" | "candidate"
+  offer?: any
+  answer?: any
+  candidate?: any
+  to: string
+  from?: string
+}
+
+interface CallEnded {
+  to: string
+}
+
+export type NextApiResponseWithSocket = NextApiResponse & {
+  socket: {
+    server: NetServer & {
+      io?: SocketIOServer
+    }
+  }
+}
+
+export const initSocket = (res: NextApiResponseWithSocket) => {
   if (!res.socket.server.io) {
-    const path = "/api/socket"
-    const httpServer: NetServer = res.socket.server as any
-    const io = new ServerIO(httpServer, {
-      path,
+    const io = new SocketIOServer(res.socket.server, {
+      path: "/api/socket",
       addTrailingSlash: false,
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+      }
     })
 
-    // Socket.IO server-side event handlers
-    io.on("connection", (socket) => {
-      console.log(`Socket connected: ${socket.id}`)
+    io.on("connection", (socket: Socket) => {
+      const userId = socket.handshake.query.userId as string
+      const serverId = socket.handshake.query.serverId as string
 
-      // Join a group channel room
-      socket.on("join-channel", (channelId: string) => {
-        socket.join(channelId)
-        console.log(`Socket ${socket.id} joined channel: ${channelId}`)
+      if (userId) {
+        socket.join(`user:${userId}`)
+      }
+
+      if (serverId) {
+        socket.join(`server:${serverId}`)
+      }
+
+      // Handle member status updates
+      socket.on("memberStatusUpdate", (data: MemberStatusUpdate) => {
+        io.to(`server:${data.serverId}`).emit("memberStatusUpdate", {
+          userId: data.userId,
+          status: data.status
+        })
       })
 
-      // Leave a group channel room
-      socket.on("leave-channel", (channelId: string) => {
-        socket.leave(channelId)
-        console.log(`Socket ${socket.id} left channel: ${channelId}`)
+      // Handle member role updates
+      socket.on("memberRoleUpdate", (data: MemberRoleUpdate) => {
+        io.to(`server:${data.serverId}`).emit("memberRoleUpdate", {
+          memberId: data.memberId,
+          role: data.role
+        })
       })
 
-      // Handle new message
-      socket.on("send-message", (message) => {
-        io.to(message.channelId).emit("new-message", message)
+      // Handle member kicks
+      socket.on("memberKicked", (data: MemberKicked) => {
+        io.to(`server:${data.serverId}`).emit("memberKicked", {
+          memberId: data.memberId
+        })
       })
 
-      // Handle channel creation
-      socket.on("channel-created", (channel) => {
-        io.to(channel.groupId).emit("new-channel", channel)
+      // Handle direct messages
+      socket.on("directMessage", (message: DirectMessage) => {
+        io.to(`user:${message.receiverId}`).emit("directMessage", message)
       })
 
-      // Handle user typing
-      socket.on("typing", ({ channelId, user, isTyping }) => {
-        socket.to(channelId).emit("user-typing", { user, isTyping })
+      // Handle call signals
+      socket.on("callSignal", (data: CallSignal) => {
+        io.to(`user:${data.to}`).emit("callSignal", {
+          ...data,
+          from: userId
+        })
       })
 
-      // Handle disconnection
+      // Handle call ended
+      socket.on("callEnded", (data: CallEnded) => {
+        io.to(`user:${data.to}`).emit("callEnded")
+      })
+
       socket.on("disconnect", () => {
-        console.log(`Socket disconnected: ${socket.id}`)
+        if (userId) {
+          io.to(`server:${serverId}`).emit("memberStatusUpdate", {
+            userId,
+            status: "offline"
+          })
+        }
       })
     })
 

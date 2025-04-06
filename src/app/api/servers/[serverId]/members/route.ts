@@ -1,69 +1,65 @@
-import { type NextRequest, NextResponse } from "next/server"
-//import prisma from "@/lib/prisma"
+import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 
 // GET /api/servers/[serverId]/members - Get server members
-export async function GET(req: NextRequest, { params }: { params: { serverId: string } }) {
-const prisma = {};
+export async function GET(
+  req: NextRequest,
+  context: { params: { serverId: string } }
+) {
   try {
-    const { serverId } = params
-    const { searchParams } = new URL(req.url)
-    const role = searchParams.get("role")
-    const search = searchParams.get("search")
-    const page = Number.parseInt(searchParams.get("page") || "1")
-    const limit = Number.parseInt(searchParams.get("limit") || "20")
-    const skip = (page - 1) * limit
-
-    // Build filter conditions
-    const where: any = {
-      serverId,
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
-    if (role) {
-      where.role = role
-    }
-
-    if (search) {
-      where.user = {
-        OR: [{ name: { contains: search, mode: "insensitive" } }, { email: { contains: search, mode: "insensitive" } }],
+    
+    const serverId = context.params.serverId
+    
+    // Check if user is a member of the server
+    const serverMember = await prisma.serverMember.findFirst({
+      where: {
+        serverId,
+        userId: session.user.id
       }
+    })
+    
+    if (!serverMember) {
+      return NextResponse.json({ error: "Not a member of this server" }, { status: 403 })
     }
-
-    // Get members with pagination
+    
+    // Get all members with their user data
     const members = await prisma.serverMember.findMany({
-      where,
+      where: {
+        serverId
+      },
       include: {
         user: {
           select: {
             id: true,
             name: true,
-            image: true,
             email: true,
-          },
-        },
-      },
-      skip,
-      take: limit,
-      orderBy: [
-        { role: "asc" }, // Admin first, then moderator, then member
-        { joinedAt: "asc" }, // Oldest members first
-      ],
+            image: true
+          }
+        }
+      }
     })
-
-    // Get total count for pagination
-    const total = await prisma.serverMember.count({ where })
-
-    return NextResponse.json({
-      members,
-      pagination: {
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit),
-      },
-    })
+    
+    // Add status information (in a real app, this would come from a presence system)
+    // For now, we'll simulate online status for demonstration
+    const membersWithStatus = members.map(member => ({
+      ...member,
+      status: Math.random() > 0.3 ? "online" : "offline" // Simulate some users being offline
+    }))
+    
+    return NextResponse.json(membersWithStatus)
   } catch (error) {
     console.error("Error fetching server members:", error)
-    return NextResponse.json({ error: "Failed to fetch server members" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to fetch server members" },
+      { status: 500 }
+    )
   }
 }
 
