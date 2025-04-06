@@ -76,12 +76,12 @@ export function UploadButton({ type, onUpload, className = "", disabled = false 
   }
 
   return (
-    <div className={className}>
+    <div className={className }>
       <input
         type="file"
         accept={type === "image" ? "image/*" : "video/*"}
         onChange={handleFileSelect}
-        className="hidden"
+        className="hidden "
         id={`file-upload-${type}`}
         disabled={disabled}
       />

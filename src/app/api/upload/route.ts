@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter } from "@/lib/auth"
-import { put } from "@vercel/blob"
+import { put, del } from "@vercel/blob" // Import the correct method for deletion
 
 // POST /api/upload - Upload a file
 export async function POST(req: NextRequest) {
@@ -53,5 +53,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to upload file" }, { status: 500 })
     }
   })
+}
+
+// DELETE /api/upload - Remove a file
+export async function DELETE(req: NextRequest) {
+  return authMiddlewareAppRouter(req, async (req) => {
+    try {
+      const { url } = await req.json();
+
+      if (!url) {
+        return NextResponse.json({ error: "No URL provided" }, { status: 400 });
+      }
+
+      // Extract the filename from the URL
+      const filename = url.split("/").pop();
+      if (!filename) {
+        return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+      }
+
+      // Remove the file from Vercel Blob
+      await del(filename); // Use the correct method to delete the file
+
+      return NextResponse.json({ message: "File removed successfully" });
+    } catch (error) {
+      console.error("File removal error:", error);
+      return NextResponse.json({ error: "Failed to remove file" }, { status: 500 });
+    }
+  });
 }
 

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter, isServerAdmin } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { Server } from "@prisma/client"
 
 
 // GET /api/servers/[serverId] - Get server details
@@ -39,7 +40,8 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
           return NextResponse.json({ error: "Server not found" }, { status: 404 })
         }
 
-        return NextResponse.json(server)
+        return NextResponse.json(server ) 
+
       } catch (error) {
         console.error("Error fetching server:", error)
         return NextResponse.json({ error: "Failed to fetch server" }, { status: 500 })

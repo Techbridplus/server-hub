@@ -23,9 +23,12 @@ import axios from "axios"
 import { useSession } from "next-auth/react"
 import React from "react"
 import { useParams } from "next/navigation"
-import { Server,MemberRole,Event,Group,Announcement} from "@prisma/client"
+import {Server, MemberRole,Event,Group,Announcement,ServerMember} from "@prisma/client"
+import { useStore } from "@/hooks/use-store"
 
-
+// interface ServerWithMembers extends Server {
+//   members: ServerMember[]
+// }
 
 
 
@@ -41,7 +44,7 @@ export default function ServerPage() {
   const [isLoading, setIsLoading] = useState(true)
   const { data: session } = useSession()
   const userId = session?.user?.id
-  
+  const { setServerData, setRole } = useStore()
   // Server data
   const [server, setServer] = useState<Server | null>(null)
 
@@ -61,13 +64,11 @@ export default function ServerPage() {
     const loadServerData = async () => {
       try {
         // Fetch server data
-        const serverRes = await fetch(`/api/servers/${serverId}`)
-        if (!serverRes.ok) throw new Error('Failed to fetch server data')
-        const serverData = await serverRes.json()
-        setServer(serverData)
-        console.log("Server data:", serverData)
-        console.log("role : ", serverData.members[0].role)
-        setUserRole(serverData.members[0].role)
+        const serverRes = await axios.get<Server>(`/api/servers/${serverId}`)
+        if (!serverRes.status) throw new Error('Failed to fetch server data')
+        setServer(serverRes.data)
+        setUserRole(serverRes.data.members[0].role)
+       
         
 
         // If server is private, check access
@@ -283,17 +284,17 @@ export default function ServerPage() {
                   </Badge>
                 )}
               </div>
-              {/* <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <Users className="h-4 w-4" />
-                <span>{server.members.toLocaleString()} members</span>
-              </div> */}
+                <span>{server._count.members} members</span>
+              </div>
             </div>
           </div>
 
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             {isAdmin && (
               <>
-                <Button className="flex-1 sm:flex-none" asChild>
+                <Button className="flex-1 sm:flex-none" asChild >
                   <Link href={`/server/${serverId}/edit`}>
                     <Edit className="mr-2 h-4 w-4" />
                     Edit Server
@@ -302,7 +303,7 @@ export default function ServerPage() {
                 <ManageMembersDialog serverId={serverId} />
               </>
             )}
-            {!server.isJoined && (
+            {userRole==MemberRole.VISITOR && (
               <Button className="flex-1 sm:flex-none" onClick={handleJoinServer}>
                 {server.isPrivate ? (
                   <>
