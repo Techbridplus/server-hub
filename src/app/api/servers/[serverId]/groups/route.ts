@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { MemberRole } from "@prisma/client"
 
 // GET /api/servers/[serverId]/groups - Get server groups
 export async function GET(req: NextRequest, { params }: { params: { serverId: string } }) {
@@ -72,20 +73,35 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
         },
       })
 
-      if (!serverMember || (serverMember.role !== "admin" && serverMember.role !== "moderator")) {
+      if (!serverMember || (serverMember.role !== MemberRole.ADMIN && serverMember.role !== MemberRole.MODERATOR)) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
       }
 
-      const { name, description, imageUrl } = await req.json()
+      const { name, description, imageUrl, isPrivate } = await req.json()
 
-      // Create group
-      const group = await prisma.group.create({
-        data: {
-          name,
-          description,
-          imageUrl,
-          serverId,
-        },
+      // Create group and add creator as admin in a transaction
+      const group = await prisma.$transaction(async (tx) => {
+        // Create the group
+        const newGroup = await tx.group.create({
+          data: {
+            name,
+            description,
+            imageUrl,
+            isPrivate,
+            serverId,
+          },
+        })
+
+        // Add creator as admin
+        await tx.groupMember.create({
+          data: {
+            userId,
+            groupId: newGroup.id,
+            role: MemberRole.ADMIN,
+          },
+        })
+
+        return newGroup
       })
 
       return NextResponse.json(group)

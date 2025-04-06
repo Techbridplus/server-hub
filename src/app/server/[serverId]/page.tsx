@@ -399,20 +399,6 @@ export default function ServerPage() {
               {hasEditRights && (
                 <CreateEventDialog
                   serverId={serverId}
-                  // onEventCreated={async () => {
-                  //   // Refresh events after creation
-                  //   const eventsData = await apiClient<{
-                  //     upcoming: {
-                  //       today: Event[]
-                  //       tomorrow: Event[]
-                  //       thisWeek: Event[]
-                  //     }
-                  //     past: Event[]
-                  //   }>(`/api/servers/${serverId}/events`)
-
-                  //   setUpcomingEvents(eventsData.upcoming)
-                  //   setPastEvents(eventsData.past)
-                  // }}
                 />
               )}
             </div>
@@ -435,20 +421,6 @@ export default function ServerPage() {
                 {hasEditRights && (
                   <CreateEventDialog
                     serverId={serverId}
-                    // onEventCreated={async () => {
-                    //   // Refresh events after creation
-                    //   const eventsData = await apiClient<{
-                    //     upcoming: {
-                    //       today: Event[]
-                    //       tomorrow: Event[]
-                    //       thisWeek: Event[]
-                    //     }
-                    //     past: Event[]
-                    //   }>(`/api/servers/${serverId}/events`)
-
-                    //   setUpcomingEvents(eventsData.upcoming)
-                    //   setPastEvents(eventsData.past)
-                    // }}
                   />
                 )}
               </div>
@@ -481,18 +453,11 @@ export default function ServerPage() {
                   {hasEditRights && (
                     <CreateAnnouncementDialog
                       serverId={serverId}
-                      // onAnnouncementCreated={async () => {
-                      //   // Refresh announcements after creation
-                      //   const announcementsData = await apiClient<Announcement[]>(
-                      //     `/api/servers/${serverId}/announcements`,
-                      //   )
-                      //   setAnnouncements(announcementsData)
-                      // }}
                     />
                   )}
                 </div>
 
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   {announcements.length > 0 ? (
                     announcements.map((announcement) => (
                       <AnnouncementCard
@@ -500,13 +465,6 @@ export default function ServerPage() {
                         announcement={announcement}
                         canEdit={hasEditRights}
                         serverId={serverId}
-                        // onUpdate={async () => {
-                        //   // Refresh announcements after update
-                        //   const announcementsData = await apiClient<Announcement[]>(
-                        //     `/api/servers/${serverId}/announcements`,
-                        //   )
-                        //   setAnnouncements(announcementsData)
-                        // }}
                       />
                     ))
                   ) : (
@@ -518,18 +476,11 @@ export default function ServerPage() {
                       {hasEditRights && (
                         <CreateAnnouncementDialog
                           serverId={serverId}
-                          // onAnnouncementCreated={async () => {
-                          //   // Refresh announcements after creation
-                          //   const announcementsData = await apiClient<Announcement[]>(
-                          //     `/api/servers/${serverId}/announcements`,
-                          //   )
-                          //   setAnnouncements(announcementsData)
-                          // }}
                         />
                       )}
                     </div>
                   )}
-                </div>
+                </div> */}
               </TabsContent>
 
               <TabsContent value="groups" className="mt-6 space-y-8 animate-fade-in" id="groups">
@@ -538,11 +489,7 @@ export default function ServerPage() {
                   {hasEditRights && (
                     <CreateGroupDialog
                       serverId={serverId}
-                      // onGroupCreated={async () => {
-                      //   // Refresh groups after creation
-                      //   const groupsData = await apiClient<Group[]>(`/api/servers/${serverId}/groups`)
-                      //   setGroups(groupsData)
-                      // }}
+
                     />
                   )}
                 </div>
@@ -555,11 +502,7 @@ export default function ServerPage() {
                         group={group}
                         serverId={server.id}
                         canEdit={hasEditRights}
-                        // onUpdate={async () => {
-                        //   // Refresh groups after update
-                        //   const groupsData = await apiClient<Group[]>(`/api/servers/${serverId}/groups`)
-                        //   setGroups(groupsData)
-                        // }}
+
                       />
                     ))
                   ) : (
@@ -571,11 +514,7 @@ export default function ServerPage() {
                       {hasEditRights && (
                         <CreateGroupDialog
                           serverId={serverId}
-                          // onGroupCreated={async () => {
-                          //   // Refresh groups after creation
-                          //   const groupsData = await apiClient<Group[]>(`/api/servers/${serverId}/groups`)
-                          //   setGroups(groupsData)
-                          // }}
+
                         />
                       )}
                     </div>
@@ -595,20 +534,7 @@ export default function ServerPage() {
                 <CreateEventDialog
                   serverId={serverId}
                   buttonSize="sm"
-                  // onEventCreated={async () => {
-                  //   // Refresh events after creation
-                  //   const eventsData = await apiClient<{
-                  //     upcoming: {
-                  //       today: Event[]
-                  //       tomorrow: Event[]
-                  //       thisWeek: Event[]
-                  //     }
-                  //     past: Event[]
-                  //   }>(`/api/servers/${serverId}/events`)
 
-                  //   setUpcomingEvents(eventsData.upcoming)
-                  //   setPastEvents(eventsData.past)
-                  // }}
                 />
               )}
             </div>
@@ -665,34 +591,21 @@ export default function ServerPage() {
                     <CreateAnnouncementDialog
                       serverId={serverId}
                       buttonSize="sm"
-                      // onAnnouncementCreated={async () => {
-                      //   // Refresh announcements after creation
-                      //   const announcementsData = await apiClient<Announcement[]>(
-                      //     `/api/servers/${serverId}/announcements`,
-                      //   )
-                      //   setAnnouncements(announcementsData)
-                      // }}
                     />
                   )}
                 </div>
 
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   {announcements.map((announcement) => (
                     <AnnouncementCard
                       key={announcement.id}
                       announcement={announcement}
                       canEdit={hasEditRights}
                       serverId={serverId}
-                      // onUpdate={async () => {
-                      //   // Refresh announcements after update
-                      //   const announcementsData = await apiClient<Announcement[]>(
-                      //     `/api/servers/${serverId}/announcements`,
-                      //   )
-                      //   setAnnouncements(announcementsData)
-                      // }}
+
                     />
                   ))}
-                </div>
+                </div> */}
               </section>
 
               <section id="groups" className="space-y-8 scroll-mt-16">
@@ -702,11 +615,7 @@ export default function ServerPage() {
                     <CreateGroupDialog
                       serverId={serverId}
                       buttonSize="sm"
-                      // onGroupCreated={async () => {
-                      //   // Refresh groups after creation
-                      //   const groupsData = await apiClient<Group[]>(`/api/servers/${serverId}/groups`)
-                      //   setGroups(groupsData)
-                      // }}
+
                     />
                   )}
                 </div>
@@ -718,11 +627,7 @@ export default function ServerPage() {
                       group={group}
                       serverId={server.id}
                       canEdit={hasEditRights}
-                      // onUpdate={async () => {
-                      //   // Refresh groups after update
-                      //   const groupsData = await apiClient<Group[]>(`/api/servers/${serverId}/groups`)
-                      //   setGroups(groupsData)
-                      // }}
+
                     />
                   ))}
                 </div>

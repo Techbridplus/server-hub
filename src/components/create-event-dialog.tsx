@@ -21,17 +21,20 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
+import { useToast } from "@/components/ui/use-toast"
 
 interface CreateEventDialogProps {
   serverId: string
   buttonSize?: "default" | "sm"
+  onEventCreated?: () => void
 }
 
-export function CreateEventDialog({ serverId, buttonSize = "default" }: CreateEventDialogProps) {
+export function CreateEventDialog({ serverId, buttonSize = "default", onEventCreated }: CreateEventDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   // Form state
   const [title, setTitle] = useState("")
@@ -44,14 +47,60 @@ export function CreateEventDialog({ serverId, buttonSize = "default" }: CreateEv
   const [maxAttendees, setMaxAttendees] = useState("50")
   const [eventType, setEventType] = useState("gaming")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      setOpen(false)
+    try {
+      // Validate required fields
+      if (!date || !startTime) {
+        toast({
+          title: "Missing information",
+          description: "Please select a date and start time for the event",
+          variant: "destructive",
+        })
+        setIsLoading(false)
+        return
+      }
+
+      // Create start date by combining date and time
+      const startDate = new Date(date)
+      const [startHours, startMinutes] = startTime.split(":")
+      startDate.setHours(parseInt(startHours, 10), parseInt(startMinutes, 10), 0, 0)
+
+      // Create end date if end time is provided
+      let endDate = null
+      if (endTime) {
+        endDate = new Date(date)
+        const [endHours, endMinutes] = endTime.split(":")
+        endDate.setHours(parseInt(endHours, 10), parseInt(endMinutes, 10), 0, 0)
+      }
+
+      // Prepare event data
+      const eventData = {
+        title,
+        description,
+        startDate: startDate.toISOString(),
+        endDate: endDate ? endDate.toISOString() : null,
+        location,
+        isExclusive,
+        maxAttendees: parseInt(maxAttendees, 10),
+        eventType,
+      }
+
+      // Send API request
+      const response = await fetch(`/api/servers/${serverId}/events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(eventData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to create event")
+      }
 
       // Reset form
       setTitle("")
@@ -64,9 +113,29 @@ export function CreateEventDialog({ serverId, buttonSize = "default" }: CreateEv
       setMaxAttendees("50")
       setEventType("gaming")
 
+      // Close dialog
+      setOpen(false)
+
       // Show success message
-      alert("Event created successfully!")
-    }, 1000)
+      toast({
+        title: "Event created",
+        description: "Your event has been created successfully",
+      })
+
+      // Call the callback if provided
+      if (onEventCreated) {
+        onEventCreated()
+      }
+    } catch (error) {
+      console.error("Error creating event:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create event",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -157,7 +226,7 @@ export function CreateEventDialog({ serverId, buttonSize = "default" }: CreateEv
 
               <div className="grid gap-2">
                 <Label htmlFor="endTime">End Time</Label>
-                <Input id="endTime" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
+                <Input id="endTime" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
               </div>
             </div>
 

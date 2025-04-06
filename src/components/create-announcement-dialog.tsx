@@ -18,38 +18,89 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import { useToast } from "@/components/ui/use-toast"
 
 interface CreateAnnouncementDialogProps {
   serverId: string
   buttonSize?: "default" | "sm"
+  onAnnouncementCreated?: () => void
 }
 
-export function CreateAnnouncementDialog({ serverId, buttonSize = "default" }: CreateAnnouncementDialogProps) {
+export function CreateAnnouncementDialog({ serverId, buttonSize = "default", onAnnouncementCreated }: CreateAnnouncementDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   // Form state
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [isImportant, setIsImportant] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      setOpen(false)
+    try {
+      // Validate required fields
+      if (!title || !content) {
+        toast({
+          title: "Missing information",
+          description: "Please provide both title and content for the announcement",
+          variant: "destructive",
+        })
+        setIsLoading(false)
+        return
+      }
+
+      // Prepare announcement data
+      const announcementData = {
+        title,
+        content,
+        isImportant,
+      }
+
+      // Send API request
+      const response = await fetch(`/api/servers/${serverId}/announcements`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(announcementData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to create announcement")
+      }
 
       // Reset form
       setTitle("")
       setContent("")
       setIsImportant(false)
 
+      // Close dialog
+      setOpen(false)
+
       // Show success message
-      alert("Announcement created successfully!")
-    }, 1000)
+      toast({
+        title: "Announcement created",
+        description: "Your announcement has been posted successfully",
+      })
+
+      // Call the callback if provided
+      if (onAnnouncementCreated) {
+        onAnnouncementCreated()
+      }
+    } catch (error) {
+      console.error("Error creating announcement:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create announcement",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (

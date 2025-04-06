@@ -3,11 +3,10 @@ import { authMiddlewareAppRouter, isServerAdmin } from "@/lib/auth"
 import { prisma } from "@/lib/prisma" // Import prisma
 
 // GET /api/servers/[serverId]/announcements - Get server announcements
-export async function GET(req: NextRequest, { params }: { params: { serverId: string } }) {
-// const prisma = {};
+export async function GET(req: NextRequest, context: { params: { serverId: string } }) {
   try {
     // Ensure params is properly awaited
-    const { serverId } = await Promise.resolve(params)
+    const { serverId } = context.params
     const { searchParams } = new URL(req.url)
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "10")
@@ -34,10 +33,9 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
       },
       skip,
       take: limit,
-      // orderBy: [
-      //   { isImportant: "asc" }, // Important announcements first
-      //   { createdAt: "desc" }, // Then newest first
-      // ],
+      orderBy: [
+        { createdAt: "desc" }, // Newest first
+      ],
     })
 
     // Get total count for pagination
@@ -63,11 +61,11 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
 }
 
 // POST /api/servers/[serverId]/announcements - Create a new announcement
-export async function POST(req: NextRequest, { params }: { params: { serverId: string } }) {
+export async function POST(req: NextRequest, context: { params: { serverId: string } }) {
   return authMiddlewareAppRouter(req, async (req, session, prisma) => {
     try {
       // Ensure params is properly awaited
-      const { serverId } = await Promise.resolve(params)
+      const { serverId } = context.params
       const { title, content, isImportant } = await req.json()
 
       // Check if user is server admin
@@ -86,18 +84,8 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
         data: {
           title,
           content,
-          userId: session.user.id, // Include the userId field
-          // isImportant: isImportant || false,
-          // author: {
-          //   connect: {
-          //     id: session.user.id,
-          //   },
-          // },
-          server: {
-            connect: {
-              id: serverId,
-            },
-          },
+          userId: session.user.id,
+          serverId,
         },
       })
 

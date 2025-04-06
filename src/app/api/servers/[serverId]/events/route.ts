@@ -117,7 +117,7 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
         },
       })
 
-      if (!serverMember || (serverMember.role !== "admin" && serverMember.role !== "moderator")) {
+      if (!serverMember || (serverMember.role !== "ADMIN" && serverMember.role !== "MODERATOR")) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
       }
 
@@ -129,6 +129,8 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
         location,
         imageUrl,
         isExclusive,
+        maxAttendees,
+        eventType,
       } = await req.json()
 
       // Create event
