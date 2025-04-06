@@ -3,10 +3,10 @@ import { authMiddlewareAppRouter, isServerAdmin } from "@/lib/auth"
 import { prisma } from "@/lib/prisma" // Import prisma
 
 // GET /api/servers/[serverId]/announcements - Get server announcements
-export async function GET(req: NextRequest, context: { params: { serverId: string } }) {
+export async function GET(req: NextRequest, params: Promise<{ serverId: string }>) {
   try {
     // Ensure params is properly awaited
-    const { serverId } = context.params
+    const { serverId } = await params
     const { searchParams } = new URL(req.url)
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "10")

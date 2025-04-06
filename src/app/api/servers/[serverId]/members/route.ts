@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma"
 // GET /api/servers/[serverId]/members - Get server members
 export async function GET(
   req: NextRequest,
-  context: { params: { serverId: string } }
+  params: Promise<{ serverId: string }>
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,7 +15,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
     
-    const serverId = context.params.serverId
+    const { serverId } = await params
     
     // Check if user is a member of the server
     const serverMember = await prisma.serverMember.findFirst({

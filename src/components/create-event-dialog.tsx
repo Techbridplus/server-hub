@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
+import { UploadButton } from "@/components/upload-button"
 
 interface CreateEventDialogProps {
   serverId: string
@@ -46,6 +47,67 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
   const [isExclusive, setIsExclusive] = useState(false)
   const [maxAttendees, setMaxAttendees] = useState("50")
   const [eventType, setEventType] = useState("gaming")
+  const [bannerImage, setBannerImage] = useState<string | null>(null)
+
+  const validateStartTime = (time: string) => {
+    const selectedDate = new Date(date || new Date())
+    const [hours, minutes] = time.split(":")
+    selectedDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0)
+
+    if (selectedDate < new Date()) {
+      toast({
+        title: "Invalid start time",
+        description: "Start time cannot be in the past",
+        variant: "destructive",
+      })
+      return false
+    }
+    return true
+  }
+
+  const validateEndTime = (time: string) => {
+    if (!startTime) {
+      toast({
+        title: "Invalid end time",
+        description: "Please select a valid start time first",
+        variant: "destructive",
+      })
+      return false
+    }
+
+    const startDate = new Date(date || new Date())
+    const [startHours, startMinutes] = startTime.split(":")
+    startDate.setHours(parseInt(startHours, 10), parseInt(startMinutes, 10), 0, 0)
+
+    const endDate = new Date(date || new Date())
+    const [endHours, endMinutes] = time.split(":")
+    endDate.setHours(parseInt(endHours, 10), parseInt(endMinutes, 10), 0, 0)
+
+    if (endDate <= startDate) {
+      toast({
+        title: "Invalid end time",
+        description: "End time must be greater than start time",
+        variant: "destructive",
+      })
+      return false
+    }
+    return true
+  }
+
+  const validateDate = (selectedDate: Date | undefined) => {
+    if (!selectedDate) return false
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Reset time to midnight for comparison
+    if (selectedDate < today) {
+      toast({
+        title: "Invalid date",
+        description: "Date cannot be in the past",
+        variant: "destructive",
+      })
+      return false
+    }
+    return true
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -68,12 +130,34 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
       const [startHours, startMinutes] = startTime.split(":")
       startDate.setHours(parseInt(startHours, 10), parseInt(startMinutes, 10), 0, 0)
 
+      // Validate start time is not in the past
+      if (startDate < new Date()) {
+        toast({
+          title: "Invalid start time",
+          description: "Start time cannot be in the past",
+          variant: "destructive",
+        })
+        setIsLoading(false)
+        return
+      }
+
       // Create end date if end time is provided
       let endDate = null
       if (endTime) {
         endDate = new Date(date)
         const [endHours, endMinutes] = endTime.split(":")
         endDate.setHours(parseInt(endHours, 10), parseInt(endMinutes, 10), 0, 0)
+
+        // Validate end time is greater than start time
+        if (endDate <= startDate) {
+          toast({
+            title: "Invalid end time",
+            description: "End time must be greater than start time",
+            variant: "destructive",
+          })
+          setIsLoading(false)
+          return
+        }
       }
 
       // Prepare event data
@@ -86,6 +170,7 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
         isExclusive,
         maxAttendees: parseInt(maxAttendees, 10),
         eventType,
+        bannerImage, // Include banner image in the event data
       }
 
       // Send API request
@@ -112,6 +197,7 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
       setIsExclusive(false)
       setMaxAttendees("50")
       setEventType("gaming")
+      setBannerImage(null)
 
       // Close dialog
       setOpen(false)
@@ -146,7 +232,7 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
           Create Event
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create New Event</DialogTitle>
@@ -154,6 +240,51 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="bannerImage" className="text-lg font-semibold">
+                Event Banner
+              </Label>
+              
+              <div className="relative w-full overflow-hidden rounded-lg border" style={{ aspectRatio: '16/9' }}>
+                {bannerImage ? (
+                  <div className="group relative h-full w-full">
+                    <img
+                      src={bannerImage}
+                      alt="Banner preview"
+                      className="object-cover h-full w-full"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          setBannerImage(null)
+                        }}
+                        disabled={isLoading}
+                      >
+                        <span className="mr-2 h-4 w-4">✖</span>
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 h-full w-full items-center justify-center">
+                    <UploadButton
+                      type="image"
+                      onUpload={(url) => setBannerImage(url)}
+                      className="flex flex-col items-center gap-2"
+                      disabled={isLoading}
+                    />
+                    <p className="text-xs text-muted-foreground">Recommended: 16:9 aspect ratio</p>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Please upload an image with a 16:9 aspect ratio for the best results.
+              </p>
+            </div>
+
             <div className="grid gap-2">
               <Label htmlFor="title">Event Title</Label>
               <Input
@@ -190,7 +321,16 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
-                    <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={(selectedDate) => {
+                        if (validateDate(selectedDate)) {
+                          setDate(selectedDate)
+                        }
+                      }}
+                      initialFocus
+                    />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -219,14 +359,29 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
                   id="startTime"
                   type="time"
                   value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
+                  onChange={(e) => {
+                    const time = e.target.value
+                    if (validateStartTime(time)) {
+                      setStartTime(time)
+                    }
+                  }}
                   required
                 />
               </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="endTime">End Time</Label>
-                <Input id="endTime" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => {
+                    const time = e.target.value
+                    if (validateEndTime(time)) {
+                      setEndTime(time)
+                    }
+                  }}
+                />
               </div>
             </div>
 

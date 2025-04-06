@@ -120,14 +120,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { serverId:
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
       }
 
-      // First, delete all server members
-      await prisma.serverMember.deleteMany({
-        where: {
-          serverId,
-        },
-      })
-
-      // Then delete the server
+      // Delete server
       await prisma.server.delete({
         where: {
           id: serverId,

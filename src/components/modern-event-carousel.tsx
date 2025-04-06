@@ -7,16 +7,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EventCard } from "./event-card"
 import { cn } from "@/lib/utils"
+import { Event } from "@prisma/client"
 
 interface ModernEventCarouselProps {
-  events: Array<{
-    id: string
-    title: string
-    date: string
-    attendees: number
-    imageUrl: string
-    isExclusive: boolean
-  }>
+  events: Event[]
   serverId?: string
 }
 

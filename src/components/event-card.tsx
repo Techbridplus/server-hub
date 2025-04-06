@@ -4,16 +4,10 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Event } from "@prisma/client"
 
 interface EventCardProps {
-  event: {
-    id: string
-    title: string
-    date: string
-    attendees: number
-    imageUrl: string
-    isExclusive: boolean
-  }
+  event: Event
   isPast?: boolean
   serverId?: string
 }

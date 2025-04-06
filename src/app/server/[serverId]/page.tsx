@@ -23,14 +23,22 @@ import axios from "axios"
 import { useSession } from "next-auth/react"
 import React from "react"
 import { useParams } from "next/navigation"
-import {Server, MemberRole,Event,Group,Announcement,ServerMember} from "@prisma/client"
-import { useStore } from "@/hooks/use-store"
-
-// interface ServerWithMembers extends Server {
-//   members: ServerMember[]
-// }
+import { Server, MemberRole, Event, Group, Announcement, ServerMember } from "@prisma/client"
 
 
+// Extend the Server type to include the `members` property
+interface ServerWithMembers extends Server {
+  members: { role: MemberRole }[];
+  events: Event[];
+  groups: Group[];
+  announcements: Announcement[];
+  _count: {
+    members: number;
+    events: number;
+    groups: number;
+    announcements: number;
+  };
+}
 
 export default function ServerPage() {
   const { toast } = useToast()
@@ -44,10 +52,8 @@ export default function ServerPage() {
   const [isLoading, setIsLoading] = useState(true)
   const { data: session } = useSession()
   const userId = session?.user?.id
-  const { setServerData, setRole } = useStore()
   // Server data
-  const [server, setServer] = useState<Server | null>(null)
-
+  const [server, setServer] = useState<ServerWithMembers | null>(null)
 
   // Events data
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([])
@@ -64,58 +70,46 @@ export default function ServerPage() {
     const loadServerData = async () => {
       try {
         // Fetch server data
-        const serverRes = await axios.get<Server>(`/api/servers/${serverId}`)
-        if (!serverRes.status) throw new Error('Failed to fetch server data')
-        setServer(serverRes.data)
-        setUserRole(serverRes.data.members[0].role)
-       
-        
+        const serverRes = await axios.get<ServerWithMembers>(`/api/servers/${serverId}`);
+        if (!serverRes.status) throw new Error("Failed to fetch server data");
+        const serverData = serverRes.data;
 
-        // If server is private, check access
-        // if (serverData.isPrivate) {
-        //   const accessRes = await fetch(`/api/servers/${serverId}/access`)
-        //   if (!accessRes.ok) throw new Error('Failed to check access')
-        //   const accessData = await accessRes.json()
-        //   setHasAccess(accessData.hasAccess)
-        //   setUserRole(accessData.role)
-        //   if (!accessData.hasAccess) {
-        //     setShowAccessDialog(true)
-        //   }
-        // }
+        setServer(serverData);
 
-        // Fetch events
-        const eventsRes = await fetch(`/api/servers/${serverId}/events`)
-        if (!eventsRes.ok) throw new Error('Failed to fetch events')
-        const eventsData = await eventsRes.json()
-        setUpcomingEvents(eventsData.upcoming)
-        setPastEvents(eventsData.past)
+        // Set the user's role based on the `members` array
+        if (serverData.members.length > 0) {
+          setUserRole(serverData.members[0].role);
+        }
 
-        // Fetch announcements
-        const announcementsRes = await fetch(`/api/servers/${serverId}/announcements`)
-        if (!announcementsRes.ok) throw new Error('Failed to fetch announcements')
-        const announcementsData = await announcementsRes.json()
-        setAnnouncements(announcementsData.announcements)
+        // Distribute events into upcoming and past
+        const now = new Date();
+        const upcoming = serverData.events.filter(
+          (event) => event.startDate && new Date(event.startDate) > now
+        );
+        const past = serverData.events.filter(
+          (event) => event.endDate && new Date(event.endDate) < now
+        );
 
-        // Fetch groups
-        const groupsRes = await fetch(`/api/servers/${serverId}/groups`)
-        if (!groupsRes.ok) throw new Error('Failed to fetch groups')
-        const groupsData = await groupsRes.json()
-        setGroups(groupsData.groups)
+        setUpcomingEvents(upcoming);
+        setPastEvents(past);
 
-        setIsLoading(false)
+        setIsLoading(false);
       } catch (error) {
-        console.error('Error loading server data:', error)
+        console.error("Error loading server data:", error);
         toast({
           title: "Error",
           description: "Failed to load server data. Please try again.",
           variant: "destructive",
-        })
-        setIsLoading(false)
+        });
+        setIsLoading(false);
       }
-    }
+    };
 
-    loadServerData()
-  }, [serverId, toast])
+    loadServerData();
+  }, [serverId, toast]);
+  console.log(server)
+  console.log("upcomingEvents", upcomingEvents)
+  console.log("pastEvents", pastEvents)
 
   const isAdmin = userRole === MemberRole.ADMIN
   const isModerator = userRole === MemberRole.MODERATOR
@@ -123,87 +117,87 @@ export default function ServerPage() {
 
   // Handle private server access
   const handleAccessSubmit = async (accessKey: string) => {
-    try {
-      const response = await axios.get<{ success: boolean; role: "member" | "visitor" }>(
-        `/api/servers/${serverId}/access`,
-        {
-          params: {
-            accessKey,
-          },
-        },
-      )
+    // try {
+    //   const response = await axios.get<{ success: boolean; role: "member" | "visitor" }>(
+    //     `/api/servers/${serverId}/access`,
+    //     {
+    //       params: {
+    //         accessKey,
+    //       },
+    //     },
+    //   )
 
-      if (response.data.success) {
-        setHasAccess(true)
-        setShowAccessDialog(false)
-        setUserRole(response.data.role)
+    //   if (response.data.success) {
+    //     setHasAccess(true)
+    //     setShowAccessDialog(false)
+    //     setUserRole(response.data.role)
 
-        // Fetch server data again
-        const serverData = await axios.get<Server>(`/api/servers/${serverId}`)
-        setServer(serverData.data)
+    //     // Fetch server data again
+    //     const serverData = await axios.get<Server>(`/api/servers/${serverId}`)
+    //     setServer(serverData.data)
 
-        // Fetch events
-        const eventsData = await axios.get<{
-          upcoming: Event[]
-          past: Event[]
-        }>(`/api/servers/${serverId}/events`)
+    //     // Fetch events
+    //     const eventsData = await axios.get<{
+    //       upcoming: Event[]
+    //       past: Event[]
+    //     }>(`/api/servers/${serverId}/events`)
 
-        setUpcomingEvents(eventsData.data.upcoming)
-        setPastEvents(eventsData.data.past)
+    //     setUpcomingEvents(eventsData.data.upcoming)
+    //     setPastEvents(eventsData.data.past)
 
-        // Fetch announcements
-        const announcementsData = await axios.get<Announcement[]>(`/api/servers/${serverId}/announcements`)
-        setAnnouncements(announcementsData.data)
+    //     // Fetch announcements
+    //     const announcementsData = await axios.get<Announcement[]>(`/api/servers/${serverId}/announcements`)
+    //     setAnnouncements(announcementsData.data)
 
-        // Fetch groups
-        const groupsData = await axios.get<Group[]>(`/api/servers/${serverId}/groups`)
-        setGroups(groupsData.data)
-      } else {
-        toast({
-          title: "Invalid access key",
-          description: "The access key you provided is invalid. Please try again.",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      console.error("Error submitting access key:", error)
-      toast({
-        title: "Error",
-        description: "Failed to verify access key. Please try again.",
-        variant: "destructive",
-      })
-    }
+    //     // Fetch groups
+    //     const groupsData = await axios.get<Group[]>(`/api/servers/${serverId}/groups`)
+    //     setGroups(groupsData.data)
+    //   } else {
+    //     toast({
+    //       title: "Invalid access key",
+    //       description: "The access key you provided is invalid. Please try again.",
+    //       variant: "destructive",
+    //     })
+    //   }
+    // } catch (error) {
+    //   console.error("Error submitting access key:", error)
+    //   toast({
+    //     title: "Error",
+    //     description: "Failed to verify access key. Please try again.",
+    //     variant: "destructive",
+    //   })
+    // }
   }
 
   // Join server handler
   const handleJoinServer = async () => {
-    try {
-      await axios.get(`/api/servers/${serverId}/join`, {
-        method: "POST",
-      })
+    // try {
+    //   await axios.get(`/api/servers/${serverId}/join`, {
+    //     method: "POST",
+    //   })
 
-      toast({
-        title: "Success",
-        description: "You have joined the server",
-      })
+    //   toast({
+    //     title: "Success",
+    //     description: "You have joined the server",
+    //   })
 
-      // Update server data
-      const serverData = await axios.get<Server>(`/api/servers/${serverId}`)
-      setServer({
-        ...serverData.data,
-        isJoined: true,
-      })
+    //   // Update server data
+    //   const serverData = await axios.get<Server>(`/api/servers/${serverId}`)
+    //   setServer({
+    //     ...serverData.data,
+    //     isJoined: true,
+    //   })
 
-      // Update user role
-      setUserRole("member")
-    } catch (error) {
-      console.error("Error joining server:", error)
-      toast({
-        title: "Error",
-        description: "Failed to join server. Please try again.",
-        variant: "destructive",
-      })
-    }
+    //   // Update user role
+    //   setUserRole("member")
+    // } catch (error) {
+    //   console.error("Error joining server:", error)
+    //   toast({
+    //     title: "Error",
+    //     description: "Failed to join server. Please try again.",
+    //     variant: "destructive",
+    //   })
+    // }
   }
 
   if (isLoading) {
@@ -435,13 +429,22 @@ export default function ServerPage() {
                   </Link>
                 </Button>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {pastEvents.map((event) => (
-                  <Link key={event.id} href={`/server/${serverId}/event/${event.id}`}>
-                    <EventCard event={event} isPast serverId={serverId} />
-                  </Link>
-                ))}
-              </div>
+              {pastEvents.length > 0 ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {pastEvents.map((event) => (
+                    <Link key={event.id} href={`/server/${serverId}/event/${event.id}`}>
+                      <EventCard event={event} isPast serverId={serverId} />
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center mb-4">
+                  <h3 className="mb-2 text-lg font-semibold">No past events</h3>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    {hasEditRights ? "Create an event to get started" : "Check back later for past events"}
+                  </p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -572,13 +575,22 @@ export default function ServerPage() {
                   </Link>
                 </Button>
               </div>
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                {pastEvents.map((event) => (
-                  <Link key={event.id} href={`/server/${serverId}/event/${event.id}`}>
-                    <EventCard event={event} isPast serverId={serverId} />
-                  </Link>
-                ))}
-              </div>
+              {pastEvents.length > 0 ? (
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                  {pastEvents.map((event) => (
+                    <Link key={event.id} href={`/server/${serverId}/event/${event.id}`}>
+                      <EventCard event={event} isPast serverId={serverId} />
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+                  <h3 className="mb-2 text-lg font-semibold">No past events</h3>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    {hasEditRights ? "Create an event to get started" : "Check back later for past events"}
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 
@@ -621,15 +633,30 @@ export default function ServerPage() {
                 </div>
 
                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                  {groups.map((group) => (
-                    <GroupCard
-                      key={group.id}
-                      group={group}
-                      serverId={server.id}
-                      canEdit={hasEditRights}
+                  {groups.length > 0 ? (
+                    groups.map((group) => (
+                      <GroupCard
+                        key={group.id}
+                        group={group}
+                        serverId={server.id}
+                        canEdit={hasEditRights}
 
-                    />
-                  ))}
+                      />
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+                      <h3 className="mb-2 text-lg font-semibold">No groups yet</h3>
+                      <p className="mb-4 text-sm text-muted-foreground">
+                        {hasEditRights ? "Create a group to get started" : "Check back later for groups"}
+                      </p>
+                      {hasEditRights && (
+                        <CreateGroupDialog
+                          serverId={serverId}
+
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
               </section>
             </>
