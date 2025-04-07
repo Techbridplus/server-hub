@@ -24,6 +24,7 @@ import { useSession } from "next-auth/react"
 import React from "react"
 import { useParams } from "next/navigation"
 import { Server, MemberRole, Event, Group, Announcement, ServerMember } from "@prisma/client"
+import { PastEventCard } from "@/components/past-event-card"
 
 
 // Extend the Server type to include the `members` property
@@ -92,6 +93,10 @@ export default function ServerPage() {
 
         setUpcomingEvents(upcoming);
         setPastEvents(past);
+        
+        // Set announcements and groups from server data
+        setAnnouncements(serverData.announcements || []);
+        setGroups(serverData.groups || []);
 
         setIsLoading(false);
       } catch (error) {
@@ -430,11 +435,9 @@ export default function ServerPage() {
                 </Button>
               </div>
               {pastEvents.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-4">
                   {pastEvents.map((event) => (
-                    <Link key={event.id} href={`/server/${serverId}/event/${event.id}`}>
-                      <EventCard event={event} isPast serverId={serverId} />
-                    </Link>
+                    <PastEventCard key={event.id} event={event} serverId={serverId} />
                   ))}
                 </div>
               ) : (
@@ -460,7 +463,7 @@ export default function ServerPage() {
                   )}
                 </div>
 
-                {/* <div className="space-y-4">
+                <div className="space-y-4">
                   {announcements.length > 0 ? (
                     announcements.map((announcement) => (
                       <AnnouncementCard
@@ -483,7 +486,7 @@ export default function ServerPage() {
                       )}
                     </div>
                   )}
-                </div> */}
+                </div>
               </TabsContent>
 
               <TabsContent value="groups" className="mt-6 space-y-8 animate-fade-in" id="groups">
@@ -578,9 +581,7 @@ export default function ServerPage() {
               {pastEvents.length > 0 ? (
                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                   {pastEvents.map((event) => (
-                    <Link key={event.id} href={`/server/${serverId}/event/${event.id}`}>
-                      <EventCard event={event} isPast serverId={serverId} />
-                    </Link>
+                    <PastEventCard key={event.id} event={event} serverId={serverId} />
                   ))}
                 </div>
               ) : (
@@ -607,17 +608,31 @@ export default function ServerPage() {
                   )}
                 </div>
 
-                {/* <div className="space-y-4">
-                  {announcements.map((announcement) => (
-                    <AnnouncementCard
-                      key={announcement.id}
-                      announcement={announcement}
-                      canEdit={hasEditRights}
-                      serverId={serverId}
-
-                    />
-                  ))}
-                </div> */}
+                <div className="space-y-4">
+                  {announcements.length > 0 ? (
+                    announcements.map((announcement) => (
+                      <AnnouncementCard
+                        key={announcement.id}
+                        announcement={announcement}
+                        canEdit={hasEditRights}
+                        serverId={serverId}
+                      />
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+                      <h3 className="mb-2 text-lg font-semibold">No announcements yet</h3>
+                      <p className="mb-4 text-sm text-muted-foreground">
+                        {hasEditRights ? "Create an announcement to get started" : "Check back later for announcements"}
+                      </p>
+                      {hasEditRights && (
+                        <CreateAnnouncementDialog
+                          serverId={serverId}
+                          buttonSize="sm"
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
               </section>
 
               <section id="groups" className="space-y-8 scroll-mt-16">

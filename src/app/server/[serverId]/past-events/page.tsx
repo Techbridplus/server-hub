@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { EventCard } from "@/components/event-card"
+import { PastEventCard } from "@/components/past-event-card"
 
 export default function PastEventsPage({ params }: { params: { serverId: string } }) {
   // Mock data for demonstration
@@ -112,7 +112,7 @@ export default function PastEventsPage({ params }: { params: { serverId: string 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {pastEvents.map((event) => (
             <Link key={event.id} href={`/server/${params.serverId}/event/${event.id}`}>
-              <EventCard event={event} isPast />
+              <PastEventCard key={event.id} event={event} serverId={params.serverId} />
             </Link>
           ))}
         </div>

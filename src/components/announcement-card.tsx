@@ -33,18 +33,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import { Announcement } from "@prisma/client"
 
 interface AnnouncementCardProps {
-  announcement: {
-    id: string
-    title: string
-    content: string
-    author: string
-    date: string
-    comments: number
-    reactions: number
-    isImportant: boolean
-  }
+  announcement: Announcement
   canEdit?: boolean
   serverId?: string
 }

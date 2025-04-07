@@ -18,7 +18,12 @@ export function EventCard({ event, isPast = false, serverId }: EventCardProps) {
     className={`overflow-hidden transition-all hover:shadow-md h-full ${event.isExclusive ? "border-primary/50" : ""}`}
     >
       <div className="relative h-full w-full ">
-        <Image src={event.imageUrl || "/placeholder.svg"} alt={event.title} fill className="object-cover" />
+        <Image 
+          src={event.imageUrl || "/placeholder.svg"} 
+          alt={event.title} 
+          fill 
+          className="object-cover" 
+        />
         {event.isExclusive && (
           <div className="absolute right-2 top-2">
             <Badge className="flex items-center gap-1 bg-background/80 text-primary backdrop-blur-sm">
