@@ -1,107 +1,56 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { authMiddlewareAppRouter, isServerAdmin } from "@/lib/auth"
+import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-//import prisma from "@/lib/prisma"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+import { isServerAdmin, authMiddlewareAppRouter } from "@/lib/auth"
 
 // GET /api/servers/[serverId]/events/[eventId] - Get event details
-export async function GET(req: NextRequest, { params }: { params: { serverId: string; eventId: string } }) {
-const prisma = {};
-  try {
-    const { serverId, eventId } = params
-    const session = await getServerSession(authOptions)
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { serverId: string; eventId: string } }
+) {
+  return authMiddlewareAppRouter(request, async (req, session, prisma) => {
+    try {
+      const { serverId, eventId } = params;
 
-    // Get event details
-    const event = await prisma.event.findUnique({
-      where: {
-        id: eventId,
-        serverId,
-      },
-      include: {
-        organizer: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-        attendees: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-              },
-            },
-          },
-        },
-        photos: {
-          include: {
-            uploader: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-              },
-            },
-          },
-          orderBy: {
-            uploadedAt: "desc",
-          },
-          take: 6,
-        },
-        videos: {
-          include: {
-            uploader: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-              },
-            },
-          },
-          orderBy: {
-            uploadedAt: "desc",
-          },
-          take: 4,
-        },
-        _count: {
-          select: {
-            attendees: true,
-            photos: true,
-            videos: true,
-            comments: true,
-          },
-        },
-      },
-    })
-
-    if (!event) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 })
-    }
-
-    // Check if user is attending
-    let userAttendance = null
-    if (session?.user?.id) {
-      userAttendance = await prisma.eventAttendee.findUnique({
+      const event = await prisma.event.findUnique({
         where: {
-          userId_eventId: {
-            userId: session.user.id,
-            eventId,
-          },
+          id: eventId,
+          serverId: serverId,
         },
-      })
-    }
+        include: {
+          server: true,
+          attendees: {
+            include: {
+              user: true
+            }
+          },
+          photos: true,
+          videos: true,
+          comments: {
+            include: {
+              user: true
+            }
+          }
+        },
+      });
 
-    return NextResponse.json({
-      ...event,
-      userAttendance: userAttendance ? userAttendance.status : null,
-    })
-  } catch (error) {
-    console.error("Error fetching event:", error)
-    return NextResponse.json({ error: "Failed to fetch event" }, { status: 500 })
-  }
+      if (!event) {
+        return NextResponse.json(
+          { error: "Event not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(event);
+    } catch (error) {
+      console.error("Error fetching event:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch event" },
+        { status: 500 }
+      );
+    }
+  });
 }
 
 // PUT /api/servers/[serverId]/events/[eventId] - Update event
@@ -109,7 +58,7 @@ export async function PUT(req: NextRequest, { params }: { params: { serverId: st
   return authMiddlewareAppRouter(req, async (req, session, prisma) => {
     try {
       const { serverId, eventId } = params
-      const { title, description, location, startTime, endTime, maxAttendees, imageUrl, isExclusive } = await req.json()
+      const { title, description, location, startDate, endDate, imageUrl, isExclusive } = await req.json()
 
       // Check if event exists
       const event = await prisma.event.findUnique({
@@ -117,25 +66,19 @@ export async function PUT(req: NextRequest, { params }: { params: { serverId: st
           id: eventId,
           serverId,
         },
-        select: {
-          organizerId: true,
-        },
       })
 
       if (!event) {
         return NextResponse.json({ error: "Event not found" }, { status: 404 })
       }
 
-      // Check if user is event organizer
-      if (event.organizerId !== session.user.id) {
-        // Check if user is server admin
-        const isAdmin = await isServerAdmin(session.user.id, serverId)
-        if (!isAdmin) {
-          return NextResponse.json(
-            { error: "Only the event organizer or server admin can update the event" },
-            { status: 403 },
-          )
-        }
+      // Check if user is server admin
+      const isAdmin = await isServerAdmin(session.user.id, serverId)
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: "Only server admin can update the event" },
+          { status: 403 },
+        )
       }
 
       // Update event
@@ -147,9 +90,8 @@ export async function PUT(req: NextRequest, { params }: { params: { serverId: st
           title,
           description,
           location,
-          startTime: startTime ? new Date(startTime) : undefined,
-          endTime: endTime ? new Date(endTime) : undefined,
-          maxAttendees,
+          startDate: startDate ? new Date(startDate) : undefined,
+          endDate: endDate ? new Date(endDate) : undefined,
           imageUrl,
           isExclusive,
         },
@@ -164,50 +106,38 @@ export async function PUT(req: NextRequest, { params }: { params: { serverId: st
 }
 
 // DELETE /api/servers/[serverId]/events/[eventId] - Delete event
-export async function DELETE(req: NextRequest, { params }: { params: { serverId: string; eventId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { serverId: string; eventId: string } }
+) {
+  return authMiddlewareAppRouter(request, async (req, session, prisma) => {
     try {
-      const { serverId, eventId } = params
+      const { serverId, eventId } = params;
 
-      // Check if event exists
-      const event = await prisma.event.findUnique({
-        where: {
-          id: eventId,
-          serverId,
-        },
-        select: {
-          organizerId: true,
-        },
-      })
-
-      if (!event) {
-        return NextResponse.json({ error: "Event not found" }, { status: 404 })
+      // Check if user is server admin
+      const isAdmin = await isServerAdmin(session.user.id, serverId);
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 403 }
+        );
       }
 
-      // Check if user is event organizer
-      if (event.organizerId !== session.user.id) {
-        // Check if user is server admin
-        const isAdmin = await isServerAdmin(session.user.id, serverId)
-        if (!isAdmin) {
-          return NextResponse.json(
-            { error: "Only the event organizer or server admin can delete the event" },
-            { status: 403 },
-          )
-        }
-      }
-
-      // Delete event
       await prisma.event.delete({
         where: {
           id: eventId,
+          serverId: serverId,
         },
-      })
+      });
 
-      return NextResponse.json({ success: true })
+      return NextResponse.json({ success: true });
     } catch (error) {
-      console.error("Error deleting event:", error)
-      return NextResponse.json({ error: "Failed to delete event" }, { status: 500 })
+      console.error("Error deleting event:", error);
+      return NextResponse.json(
+        { error: "Failed to delete event" },
+        { status: 500 }
+      );
     }
-  })
+  });
 }
 

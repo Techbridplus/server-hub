@@ -34,9 +34,13 @@ import { Switch } from "@/components/ui/switch"
 import { Group } from "@prisma/client"
 
 interface GroupCardProps {
-  group: Group
-  serverId: string
-  canEdit?: boolean
+  group: Group & {
+    _count?: {
+      members: number;
+    };
+  };
+  serverId: string;
+  canEdit?: boolean;
 }
 
 export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) {
@@ -45,7 +49,7 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
 
   // Edit form state
   const [editName, setEditName] = useState(group.name)
-  const [editDescription, setEditDescription] = useState(group.description)
+  const [editDescription, setEditDescription] = useState(group.description || "")
   const [isPrivate, setIsPrivate] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
 
@@ -80,13 +84,13 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative h-10 w-10 overflow-hidden rounded-md">
-              <Image src={group.imageUrl || "/placeholder.svg"} alt={group.name} fill className="object-cover" />
+              <Image src={group.imageUrl || "/placeholder.svg"} alt={group.name} fill className="object-cover" sizes="40px" />
             </div>
             <div>
               <h3 className="font-semibold">{group.name}</h3>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Users className="h-3 w-3" />
-                <span>{group.members} members</span>
+                <span>{group._count?.members || 0} members</span>
               </div>
             </div>
           </div>

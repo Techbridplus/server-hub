@@ -30,6 +30,7 @@ model User {
   sentMessages     DirectMessage[] @relation("SentMessages")
   receivedMessages DirectMessage[] @relation("ReceivedMessages")
   messages      Message[]
+  eventComments EventComment[]
 }
 
 model Account {
@@ -195,13 +196,17 @@ model EventVideo {
 
 model EventComment {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
+
   content   String
   userId    String   @db.ObjectId
   eventId   String   @db.ObjectId
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  event Event @relation(fields: [eventId], references: [id])
+  @@index([eventId])
+  @@index([userId])
 }
 
 model Group {
@@ -220,11 +225,11 @@ model Group {
 }
 
 model GroupMember {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId   String   @db.ObjectId
-  groupId  String   @db.ObjectId
-  role     MemberRole   @default(MEMBER) // admin, moderator, member
-  joinedAt DateTime @default(now())
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String     @db.ObjectId
+  groupId   String     @db.ObjectId
+  role      MemberRole @default(MEMBER)
+  joinedAt  DateTime   @default(now())
 
   user  User  @relation(fields: [userId], references: [id])
   group Group @relation(fields: [groupId], references: [id])

@@ -112,6 +112,37 @@ export default function ServerPage() {
 
     loadServerData();
   }, [serverId, toast]);
+
+  // Function to refresh announcements
+  const refreshAnnouncements = async () => {
+    try {
+      const response = await axios.get(`/api/servers/${serverId}/announcements`);
+      setAnnouncements(response.data.announcements);
+    } catch (error) {
+      console.error("Error refreshing announcements:", error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh announcements. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Function to refresh groups
+  const refreshGroups = async () => {
+    try {
+      const response = await axios.get(`/api/servers/${serverId}/groups`);
+      setGroups(response.data.groups);
+    } catch (error) {
+      console.error("Error refreshing groups:", error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh groups. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   console.log(server)
   console.log("upcomingEvents", upcomingEvents)
   console.log("pastEvents", pastEvents)
@@ -459,6 +490,7 @@ export default function ServerPage() {
                   {hasEditRights && (
                     <CreateAnnouncementDialog
                       serverId={serverId}
+                      onAnnouncementCreated={refreshAnnouncements}
                     />
                   )}
                 </div>
@@ -482,6 +514,7 @@ export default function ServerPage() {
                       {hasEditRights && (
                         <CreateAnnouncementDialog
                           serverId={serverId}
+                          onAnnouncementCreated={refreshAnnouncements}
                         />
                       )}
                     </div>
@@ -495,20 +528,19 @@ export default function ServerPage() {
                   {hasEditRights && (
                     <CreateGroupDialog
                       serverId={serverId}
-
+                      onGroupCreated={refreshGroups}
                     />
                   )}
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {groups.length > 0 ? (
                     groups.map((group) => (
                       <GroupCard
                         key={group.id}
                         group={group}
-                        serverId={server.id}
+                        serverId={serverId}
                         canEdit={hasEditRights}
-
                       />
                     ))
                   ) : (
@@ -520,7 +552,7 @@ export default function ServerPage() {
                       {hasEditRights && (
                         <CreateGroupDialog
                           serverId={serverId}
-
+                          onGroupCreated={refreshGroups}
                         />
                       )}
                     </div>
@@ -540,7 +572,6 @@ export default function ServerPage() {
                 <CreateEventDialog
                   serverId={serverId}
                   buttonSize="sm"
-
                 />
               )}
             </div>
@@ -642,7 +673,7 @@ export default function ServerPage() {
                     <CreateGroupDialog
                       serverId={serverId}
                       buttonSize="sm"
-
+                      onGroupCreated={refreshGroups}
                     />
                   )}
                 </div>
@@ -655,7 +686,6 @@ export default function ServerPage() {
                         group={group}
                         serverId={server.id}
                         canEdit={hasEditRights}
-
                       />
                     ))
                   ) : (
@@ -667,7 +697,8 @@ export default function ServerPage() {
                       {hasEditRights && (
                         <CreateGroupDialog
                           serverId={serverId}
-
+                          buttonSize="sm"
+                          onGroupCreated={refreshGroups}
                         />
                       )}
                     </div>

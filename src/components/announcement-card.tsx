@@ -35,15 +35,24 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Announcement } from "@prisma/client"
 
+// Extend the Announcement type with additional fields
+interface ExtendedAnnouncement extends Announcement {
+  reactions?: number
+  isImportant?: boolean
+  author?: string
+  date?: string
+  comments?: number
+}
+
 interface AnnouncementCardProps {
-  announcement: Announcement
+  announcement: ExtendedAnnouncement
   canEdit?: boolean
   serverId?: string
 }
 
 export function AnnouncementCard({ announcement, canEdit = false, serverId }: AnnouncementCardProps) {
   const [liked, setLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(announcement.reactions)
+  const [likeCount, setLikeCount] = useState(announcement.reactions || 0)
   const [showComments, setShowComments] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -51,8 +60,14 @@ export function AnnouncementCard({ announcement, canEdit = false, serverId }: An
   // Edit form state
   const [editTitle, setEditTitle] = useState(announcement.title)
   const [editContent, setEditContent] = useState(announcement.content)
-  const [editIsImportant, setEditIsImportant] = useState(announcement.isImportant)
+  const [editIsImportant, setEditIsImportant] = useState(announcement.isImportant || false)
   const [isEditing, setIsEditing] = useState(false)
+
+  // Default values for missing properties
+  const author = announcement.author || "Unknown"
+  const date = announcement.date || new Date(announcement.createdAt).toLocaleDateString()
+  const comments = announcement.comments || 0
+  const isImportant = announcement.isImportant || false
 
   const handleLike = () => {
     if (liked) {
@@ -94,18 +109,18 @@ export function AnnouncementCard({ announcement, canEdit = false, serverId }: An
   }
 
   return (
-    <Card className={announcement.isImportant ? "border-destructive/50 bg-destructive/5" : ""}>
+    <Card className={isImportant ? "border-destructive/50 bg-destructive/5" : ""}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-2">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={`/placeholder.svg?height=32&width=32`} alt={announcement.author} />
-              <AvatarFallback>{announcement.author.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={`/placeholder.svg?height=32&width=32`} alt={author} />
+              <AvatarFallback>{author.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold">{announcement.title}</h3>
-                {announcement.isImportant && (
+                {isImportant && (
                   <Badge variant="outline" className="border-destructive text-destructive">
                     <AlertTriangle className="mr-1 h-3 w-3" />
                     Important
@@ -113,9 +128,9 @@ export function AnnouncementCard({ announcement, canEdit = false, serverId }: An
                 )}
               </div>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <span>{announcement.author}</span>
+                <span>{author}</span>
                 <span>•</span>
-                <span>{announcement.date}</span>
+                <span>{date}</span>
               </div>
             </div>
           </div>
@@ -163,7 +178,7 @@ export function AnnouncementCard({ announcement, canEdit = false, serverId }: An
             </Button>
             <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={toggleComments}>
               <MessageSquare className="h-4 w-4" />
-              <span>{announcement.comments}</span>
+              <span>{comments}</span>
               {showComments ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />}
             </Button>
           </div>

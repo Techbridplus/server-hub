@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, ChevronDown, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -5,59 +8,71 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { PastEventCard } from "@/components/past-event-card"
+import { useToast } from "@/components/ui/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Event } from "@prisma/client"
 
 export default function PastEventsPage({ params }: { params: { serverId: string } }) {
-  // Mock data for demonstration
-  const pastEvents = [
-    {
-      id: "4",
-      title: "Fortnite Custom Matches",
-      date: "March 10, 2025",
-      attendees: 50,
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      isExclusive: false,
-    },
-    {
-      id: "5",
-      title: "Among Us Game Night",
-      date: "March 8, 2025",
-      attendees: 15,
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      isExclusive: false,
-    },
-    {
-      id: "6",
-      title: "Minecraft Building Contest",
-      date: "March 5, 2025",
-      attendees: 28,
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      isExclusive: true,
-    },
-    {
-      id: "7",
-      title: "League of Legends Tournament",
-      date: "March 1, 2025",
-      attendees: 40,
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      isExclusive: false,
-    },
-    {
-      id: "8",
-      title: "Valorant Practice Session",
-      date: "February 25, 2025",
-      attendees: 12,
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      isExclusive: false,
-    },
-    {
-      id: "9",
-      title: "Game Development Workshop",
-      date: "February 20, 2025",
-      attendees: 35,
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      isExclusive: true,
-    },
-  ]
+  const { toast } = useToast()
+  const [events, setEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [sortBy, setSortBy] = useState("date-desc")
+  const [filterBy, setFilterBy] = useState("all")
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  const fetchEvents = async (pageNum: number, isLoadMore = false) => {
+    try {
+      const response = await fetch(
+        `/api/servers/${params.serverId}/events/past?page=${pageNum}&search=${searchQuery}&sort=${sortBy}&filter=${filterBy}`
+      )
+      if (!response.ok) throw new Error("Failed to fetch events")
+      const data = await response.json()
+      
+      if (isLoadMore) {
+        setEvents(prev => [...prev, ...data.events])
+      } else {
+        setEvents(data.events)
+      }
+      setHasMore(data.hasMore)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load past events. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
+    }
+  }
+
+  useEffect(() => {
+    setLoading(true)
+    setPage(1)
+    fetchEvents(1)
+  }, [searchQuery, sortBy, filterBy])
+
+  const handleLoadMore = () => {
+    setLoadingMore(true)
+    const nextPage = page + 1
+    setPage(nextPage)
+    fetchEvents(nextPage, true)
+  }
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+  }
+
+  const handleSort = (value: string) => {
+    setSortBy(value)
+  }
+
+  const handleFilter = (value: string) => {
+    setFilterBy(value)
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,9 +97,15 @@ export default function PastEventsPage({ params }: { params: { serverId: string 
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input type="search" placeholder="Search past events..." className="pl-9" />
+            <Input 
+              type="search" 
+              placeholder="Search past events..." 
+              className="pl-9"
+              value={searchQuery}
+              onChange={handleSearch}
+            />
           </div>
-          <Select defaultValue="date-desc">
+          <Select value={sortBy} onValueChange={handleSort}>
             <SelectTrigger>
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
@@ -95,7 +116,7 @@ export default function PastEventsPage({ params }: { params: { serverId: string 
               <SelectItem value="attendees-asc">Attendees (Least first)</SelectItem>
             </SelectContent>
           </Select>
-          <Select defaultValue="all">
+          <Select value={filterBy} onValueChange={handleFilter}>
             <SelectTrigger>
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
@@ -109,19 +130,44 @@ export default function PastEventsPage({ params }: { params: { serverId: string 
 
         <Separator className="mb-6" />
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {pastEvents.map((event) => (
-            <Link key={event.id} href={`/server/${params.serverId}/event/${event.id}`}>
-              <PastEventCard key={event.id} event={event} serverId={params.serverId} />
-            </Link>
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="h-[200px] w-full rounded-lg" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : events.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No past events found.</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {events.map((event) => (
+                <Link key={event.id} href={`/server/${params.serverId}/event/${event.id}`}>
+                  <PastEventCard event={event} serverId={params.serverId} />
+                </Link>
+              ))}
+            </div>
 
-        <div className="mt-8 flex justify-center">
-          <Button variant="outline" className="gap-1">
-            Load More <ChevronDown className="h-4 w-4" />
-          </Button>
-        </div>
+            {hasMore && (
+              <div className="mt-8 flex justify-center">
+                <Button 
+                  variant="outline" 
+                  className="gap-1"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? "Loading..." : "Load More"} <ChevronDown className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   )

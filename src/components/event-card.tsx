@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Event } from "@prisma/client"
+import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 interface EventCardProps {
   event: Event
@@ -13,6 +15,9 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, isPast = false, serverId }: EventCardProps) {
+  console.log("serverId", serverId)
+  console.log("eventId", event.id)
+  const router = useRouter()
   return (
     <Card 
     className={`overflow-hidden transition-all hover:shadow-md h-full ${event.isExclusive ? "border-primary/50" : ""}`}
@@ -47,17 +52,26 @@ export function EventCard({ event, isPast = false, serverId }: EventCardProps) {
             </div>
           </CardContent> */}
           <CardFooter>
-            {serverId ? (
-              <Link href={`/server/${serverId}/event/${event.id}`} className="w-full">
-                <Button variant={isPast ? "outline" : "default"} className="w-[60px]">
-                  {isPast ? "View Recap" : "RSVP"}
-                </Button>
-              </Link>
-            ) : (
-              <Button variant={isPast ? "outline" : "default"} className="w-full">
+            {serverId && (
+              <Link 
+                href={`/server/${serverId}/event/${event.id}`} 
+                className={cn(
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                  isPast 
+                    ? "border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2" 
+                    : "bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2",
+                  "w-[60px]"
+                )}
+              >
                 {isPast ? "View Recap" : "RSVP"}
-              </Button>
-            )}
+              </Link>
+            ) 
+            // : (
+            //   <Button variant={isPast ? "outline" : "default"} className="w-full">
+            //     {isPast ? "View Recap" : "RSVP"}
+            //   </Button>
+            // )
+            }
           </CardFooter>
         </div>
       </div>

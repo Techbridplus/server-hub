@@ -1,52 +1,31 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { io, type Socket } from "socket.io-client"
+import { useEffect, useRef } from "react"
+import { io, Socket } from "socket.io-client"
 
-let socket: Socket | null = null
-
-export const useSocket = (channelId?: string) => {
-  const [isConnected, setIsConnected] = useState(false)
+export function useSocket() {
+  const socketRef = useRef<Socket | null>(null)
 
   useEffect(() => {
-    // Initialize socket connection if it doesn't exist
-    if (!socket) {
-      socket = io({
-        path: "/api/socket",
-        addTrailingSlash: false,
-      })
-    }
+    // Initialize socket connection
+    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001", {
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    })
 
-    // Set up event listeners
-    const onConnect = () => {
-      setIsConnected(true)
-      console.log("Socket connected")
+    // Store socket in ref
+    socketRef.current = socket
 
-      // Join channel room if channelId is provided
-      if (channelId) {
-        socket?.emit("join-channel", channelId)
-      }
-    }
-
-    const onDisconnect = () => {
-      setIsConnected(false)
-      console.log("Socket disconnected")
-    }
-
-    socket.on("connect", onConnect)
-    socket.on("disconnect", onDisconnect)
-
-    // Clean up event listeners on unmount
+    // Cleanup on unmount
     return () => {
-      if (channelId) {
-        socket?.emit("leave-channel", channelId)
+      if (socket) {
+        socket.disconnect()
       }
-
-      socket?.off("connect", onConnect)
-      socket?.off("disconnect", onDisconnect)
     }
-  }, [channelId])
+  }, [])
 
-  return { socket, isConnected }
+  return socketRef.current
 }
 

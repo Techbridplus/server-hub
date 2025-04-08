@@ -25,9 +25,10 @@ import { useToast } from "@/hooks/use-toast"
 interface CreateGroupDialogProps {
   serverId: string
   buttonSize?: "default" | "sm"
+  onGroupCreated?: () => void
 }
 
-export function CreateGroupDialog({ serverId, buttonSize = "default" }: CreateGroupDialogProps) {
+export function CreateGroupDialog({ serverId, buttonSize = "default", onGroupCreated }: CreateGroupDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -135,6 +136,9 @@ export function CreateGroupDialog({ serverId, buttonSize = "default" }: CreateGr
         title: "Success",
         description: "Group created successfully!",
       })
+
+      // Call onGroupCreated callback if provided
+      onGroupCreated?.()
 
       // Refresh the page to show the new group
       router.refresh()

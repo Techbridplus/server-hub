@@ -13,8 +13,20 @@ import { ShareDialog } from "@/components/share-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+import { useParams } from "next/navigation"
+import { toast } from "@/components/ui/use-toast"
 
-export default function EventPage({ params }: { params: { serverId: string; eventId: string } }) {
+export default function EventPage() {
+  // Get route parameters using the useParams hook
+  const params = useParams()
+  const serverId = params.serverId as string
+  const eventId = params.eventId as string
+  
+  // State for event data
+  const [event, setEvent] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
   // State for RSVP
   const [rsvpStatus, setRsvpStatus] = useState<"going" | "maybe" | "not-going" | null>(null)
   const [showAllAttendees, setShowAllAttendees] = useState(false)
@@ -29,67 +41,40 @@ export default function EventPage({ params }: { params: { serverId: string; even
     isPast: false,
   })
 
-  // Mock data for demonstration
-  const event = {
-    id: params.eventId,
-    title: "Weekly Game Night",
-    description:
-      "Join us for our weekly game night where we'll be playing a variety of games including Among Us, Valorant, and Minecraft. All skill levels are welcome!",
-    date: "Friday, March 15, 2025",
-    time: "8:00 PM - 11:00 PM",
-    location: "Discord Voice Channel: Game Night",
-    organizer: "GameMaster",
-    attendees: 24,
-    maxAttendees: 30,
-    imageUrl: "/placeholder.svg?height=400&width=800",
-    isExclusive: params.eventId === "2",
-    isPast: false,
-    startTime: "2025-03-15T20:00:00",
-    endTime: "2025-03-15T23:00:00",
-  }
+  // Fetch event data
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        const response = await fetch(`/api/servers/${serverId}/events/${eventId}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch event')
+        }
+        const data = await response.json()
+        setEvent(data)
+        setRsvpStatus(data.userAttendance)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+        toast({
+          title: "Error",
+          description: "Failed to load event details",
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const attendees = [
-    { id: "1", name: "JohnDoe", imageUrl: "/placeholder.svg?height=40&width=40", status: "going" },
-    { id: "2", name: "JaneSmith", imageUrl: "/placeholder.svg?height=40&width=40", status: "going" },
-    { id: "3", name: "BobJohnson", imageUrl: "/placeholder.svg?height=40&width=40", status: "going" },
-    { id: "4", name: "AliceWilliams", imageUrl: "/placeholder.svg?height=40&width=40", status: "going" },
-    { id: "5", name: "CharlieBrown", imageUrl: "/placeholder.svg?height=40&width=40", status: "going" },
-    { id: "6", name: "DavidMiller", imageUrl: "/placeholder.svg?height=40&width=40", status: "maybe" },
-    { id: "7", name: "EvaGreen", imageUrl: "/placeholder.svg?height=40&width=40", status: "maybe" },
-    { id: "8", name: "FrankWhite", imageUrl: "/placeholder.svg?height=40&width=40", status: "not-going" },
-  ]
-
-  // Mock data for photos and videos (for past events)
-  const photos = [
-    { id: "1", url: "/placeholder.svg?height=300&width=400", type: "photo" },
-    { id: "2", url: "/placeholder.svg?height=300&width=400", type: "photo" },
-    { id: "3", url: "/placeholder.svg?height=300&width=400", type: "photo" },
-    { id: "4", url: "/placeholder.svg?height=300&width=400", type: "photo" },
-    { id: "5", url: "/placeholder.svg?height=300&width=400", type: "photo" },
-    { id: "6", url: "/placeholder.svg?height=300&width=400", type: "photo" },
-  ]
-
-  const videos = [
-    {
-      id: "1",
-      url: "/placeholder.svg?height=300&width=400",
-      type: "video",
-      thumbnail: "/placeholder.svg?height=300&width=400",
-    },
-    {
-      id: "2",
-      url: "/placeholder.svg?height=300&width=400",
-      type: "video",
-      thumbnail: "/placeholder.svg?height=300&width=400",
-    },
-  ]
+    fetchEvent()
+  }, [serverId, eventId])
 
   // Calculate time remaining for the event
   useEffect(() => {
+    if (!event) return
+
     const calculateTimeRemaining = () => {
       const now = new Date()
-      const startTime = new Date(event.startTime)
-      const endTime = new Date(event.endTime)
+      const startTime = new Date(event.startDate)
+      const endTime = event.endDate ? new Date(event.endDate) : new Date(startTime.getTime() + 2 * 60 * 60 * 1000) // Default 2 hours if no end time
 
       // Check if event is past
       if (now > endTime) {
@@ -139,12 +124,71 @@ export default function EventPage({ params }: { params: { serverId: string; even
     const interval = setInterval(calculateTimeRemaining, 1000)
 
     return () => clearInterval(interval)
-  }, [event.startTime, event.endTime])
+  }, [event])
 
   // Handle RSVP
-  const handleRSVP = (status: "going" | "maybe" | "not-going") => {
-    setRsvpStatus(status)
-    // In a real app, you would call an API to update the RSVP status
+  const handleRSVP = async (status: "going" | "maybe" | "not-going") => {
+    try {
+      const response = await fetch(`/api/servers/${serverId}/events/${eventId}/attend`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update RSVP status')
+      }
+
+      setRsvpStatus(status)
+      toast({
+        title: "Success",
+        description: `You are now ${status} this event`,
+      })
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to update RSVP status",
+        variant: "destructive",
+      })
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center h-[50vh]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-muted-foreground">Loading event details...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !event) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center h-[50vh]">
+            <div className="text-center">
+              <p className="text-destructive">Failed to load event details</p>
+              <Link
+                href={`/server/${serverId}`}
+                className="mt-4 inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to server
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -152,7 +196,7 @@ export default function EventPage({ params }: { params: { serverId: string; even
       <div className="container px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6">
           <Link
-            href={`/server/${params.serverId}`}
+            href={`/server/${serverId}`}
             className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -192,11 +236,14 @@ export default function EventPage({ params }: { params: { serverId: string; even
                 <div className="mb-6 flex flex-wrap gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
-                    <span>{event.date}</span>
+                    <span>{new Date(event.startDate).toLocaleDateString()}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
-                    <span>{event.time}</span>
+                    <span>
+                      {new Date(event.startDate).toLocaleTimeString()} - 
+                      {event.endDate ? new Date(event.endDate).toLocaleTimeString() : 'End time not specified'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
@@ -251,217 +298,87 @@ export default function EventPage({ params }: { params: { serverId: string; even
                   <h2 className="mb-2 text-lg font-semibold">Organized by</h2>
                   <div className="flex items-center gap-2">
                     <Avatar>
-                      <AvatarImage src="/placeholder.svg?height=40&width=40" />
-                      <AvatarFallback>{event.organizer.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      <AvatarImage src={event.organizer?.image || "/placeholder.svg"} />
+                      <AvatarFallback>{event.organizer?.name?.substring(0, 2).toUpperCase() || "UN"}</AvatarFallback>
                     </Avatar>
-                    <span>{event.organizer}</span>
+                    <span>{event.organizer?.name || "Unknown"}</span>
                   </div>
                 </div>
 
                 <Separator className="my-6" />
 
                 {/* RSVP section */}
-                {!timeRemaining.isPast ? (
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex gap-2">
+                {!timeRemaining.isPast && (
+                  <div className="mb-6">
+                    <h2 className="mb-4 text-lg font-semibold">RSVP</h2>
+                    <div className="flex flex-wrap gap-2">
                       <Button
-                        size="lg"
-                        className={cn(rsvpStatus === "going" && "bg-green-600 hover:bg-green-700")}
+                        variant={rsvpStatus === "going" ? "default" : "outline"}
                         onClick={() => handleRSVP("going")}
                       >
-                        {rsvpStatus === "going" ? (
-                          <>
-                            <Check className="mr-2 h-4 w-4" />
-                            Going
-                          </>
-                        ) : (
-                          "I'll be there!"
-                        )}
+                        <Check className="mr-2 h-4 w-4" />
+                        Going
                       </Button>
                       <Button
-                        variant="outline"
-                        size="lg"
-                        className={cn(rsvpStatus === "maybe" && "border-primary text-primary")}
+                        variant={rsvpStatus === "maybe" ? "default" : "outline"}
                         onClick={() => handleRSVP("maybe")}
                       >
                         Maybe
                       </Button>
                       <Button
-                        variant="outline"
-                        size="lg"
-                        className={cn(rsvpStatus === "not-going" && "border-destructive text-destructive")}
+                        variant={rsvpStatus === "not-going" ? "default" : "outline"}
                         onClick={() => handleRSVP("not-going")}
                       >
-                        Can't go
+                        Not Going
                       </Button>
                     </div>
-                    <ShareDialog
-                      title={event.title}
-                      url={`/server/${params.serverId}/event/${event.id}`}
-                      type="event"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <Button size="lg" variant="outline" disabled>
-                      Event has ended
-                    </Button>
-                    <ShareDialog
-                      title={event.title}
-                      url={`/server/${params.serverId}/event/${event.id}`}
-                      type="event"
-                    />
                   </div>
                 )}
-              </div>
-            </div>
 
-            {/* Photos and videos section (only for past events) */}
-            {timeRemaining.isPast && (
-              <div className="mt-6 rounded-lg border bg-card">
-                <div className="p-6">
-                  <h2 className="mb-4 text-xl font-semibold">Event Memories</h2>
+                {/* Attendees section */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">Attendees</h2>
+                    <Button
+                      variant="ghost"
+                      className="text-sm"
+                      onClick={() => setShowAllAttendees(!showAllAttendees)}
+                    >
+                      {showAllAttendees ? "Show Less" : "Show All"}
+                    </Button>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                    {event.attendees
+                      ?.slice(0, showAllAttendees ? undefined : 8)
+                      .map((attendee: any) => (
+                        <div key={attendee.user.id} className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={attendee.user.image || "/placeholder.svg"} />
+                            <AvatarFallback>{attendee.user.name?.substring(0, 2).toUpperCase() || "UN"}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">{attendee.user.name}</span>
+                            <span className="text-xs text-muted-foreground capitalize">{attendee.status}</span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
 
-                  <Tabs defaultValue="photos">
-                    <TabsList className="mb-4">
-                      <TabsTrigger value="photos" className="flex items-center gap-1">
-                        <Camera className="h-4 w-4" />
-                        Photos ({photos.length})
-                      </TabsTrigger>
-                      <TabsTrigger value="videos" className="flex items-center gap-1">
-                        <Video className="h-4 w-4" />
-                        Videos ({videos.length})
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="photos">
-                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                        {photos.map((photo) => (
-                          <Dialog key={photo.id}>
-                            <DialogTrigger asChild>
-                              <div className="relative aspect-square cursor-pointer overflow-hidden rounded-md">
-                                <Image
-                                  src={photo.url || "/placeholder.svg"}
-                                  alt="Event photo"
-                                  fill
-                                  className="object-cover transition-transform hover:scale-105"
-                                />
-                              </div>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-3xl">
-                              <div className="relative aspect-video w-full">
-                                <Image
-                                  src={photo.url || "/placeholder.svg"}
-                                  alt="Event photo"
-                                  fill
-                                  className="object-contain"
-                                />
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        ))}
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="videos">
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        {videos.map((video) => (
-                          <Dialog key={video.id}>
-                            <DialogTrigger asChild>
-                              <div className="relative aspect-video cursor-pointer overflow-hidden rounded-md">
-                                <Image
-                                  src={video.thumbnail || "/placeholder.svg"}
-                                  alt="Video thumbnail"
-                                  fill
-                                  className="object-cover transition-transform hover:scale-105"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                  <div className="rounded-full bg-white/80 p-3">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      viewBox="0 0 24 24"
-                                      fill="currentColor"
-                                      className="h-6 w-6 text-primary"
-                                    >
-                                      <path d="M8 5v14l11-7z" />
-                                    </svg>
-                                  </div>
-                                </div>
-                              </div>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-3xl">
-                              <div className="relative aspect-video w-full">
-                                <Image
-                                  src={video.thumbnail || "/placeholder.svg"}
-                                  alt="Video thumbnail"
-                                  fill
-                                  className="object-cover"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                  <div className="rounded-full bg-white/80 p-3">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      viewBox="0 0 24 24"
-                                      fill="currentColor"
-                                      className="h-6 w-6 text-primary"
-                                    >
-                                      <path d="M8 5v14l11-7z" />
-                                    </svg>
-                                  </div>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        ))}
-                      </div>
-                    </TabsContent>
-                  </Tabs>
+                {/* Comments section */}
+                <div className="mb-6">
+                  <h2 className="mb-4 text-lg font-semibold">Comments</h2>
+                  <CommentSection
+                    resourceId={eventId}
+                    resourceType="event"
+                  />
                 </div>
               </div>
-            )}
-
-            <div className="mt-6">
-              <CommentSection resourceId={event.id} resourceType="event" />
             </div>
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-lg border bg-card p-6">
-              <h2 className="mb-4 text-lg font-semibold">
-                Attendees ({event.attendees}/{event.maxAttendees})
-              </h2>
-              <div className="space-y-3">
-                {(showAllAttendees ? attendees : attendees.slice(0, 5)).map((attendee) => (
-                  <div key={attendee.id} className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={attendee.imageUrl} />
-                      <AvatarFallback>{attendee.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm">{attendee.name}</span>
-                    {attendee.status === "going" && (
-                      <Badge variant="outline" className="ml-auto border-green-500 text-green-500">
-                        Going
-                      </Badge>
-                    )}
-                    {attendee.status === "maybe" && (
-                      <Badge variant="outline" className="ml-auto">
-                        Maybe
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-                {attendees.length > 5 && (
-                  <Button
-                    variant="outline"
-                    className="mt-2 w-full text-sm"
-                    onClick={() => setShowAllAttendees(!showAllAttendees)}
-                  >
-                    {showAllAttendees ? "Show Less" : `View all ${event.attendees} attendees`}
-                  </Button>
-                )}
-              </div>
-            </div>
-
+            {/* Event details card */}
             <div className="rounded-lg border bg-card p-6">
               <h2 className="mb-4 text-lg font-semibold">Event Details</h2>
               <div className="space-y-4 text-sm">
@@ -476,10 +393,23 @@ export default function EventPage({ params }: { params: { serverId: string; even
                   <p className="text-muted-foreground">{event.isExclusive ? "Exclusive (Members Only)" : "Public"}</p>
                 </div>
                 <div>
-                  <p className="font-medium">RSVP Deadline</p>
-                  <p className="text-muted-foreground">1 hour before event</p>
+                  <p className="font-medium">Attendees</p>
+                  <p className="text-muted-foreground">
+                    {event._count?.attendees || 0} attending
+                    {event.maxAttendees ? ` (${event.maxAttendees} max)` : ""}
+                  </p>
                 </div>
               </div>
+            </div>
+
+            {/* Share card */}
+            <div className="rounded-lg border bg-card p-6">
+              <h2 className="mb-4 text-lg font-semibold">Share Event</h2>
+              <ShareDialog
+                title={event.title}
+                url={`${window.location.origin}/server/${serverId}/event/${eventId}`}
+                type="event"
+              />
             </div>
           </div>
         </div>
