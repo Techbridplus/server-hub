@@ -11,8 +11,8 @@ import { PastEventCard } from "@/components/past-event-card"
 import { useToast } from "@/components/ui/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Event } from "@prisma/client"
-
-export default function PastEventsPage({ params }: { params: { serverId: string } }) {
+import { useParams } from "next/navigation"
+export default function PastEventsPage() {
   const { toast } = useToast()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,11 +22,13 @@ export default function PastEventsPage({ params }: { params: { serverId: string 
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const params = useParams();
+  const serverId = params.serverId as string
 
   const fetchEvents = async (pageNum: number, isLoadMore = false) => {
     try {
       const response = await fetch(
-        `/api/servers/${params.serverId}/events/past?page=${pageNum}&search=${searchQuery}&sort=${sortBy}&filter=${filterBy}`
+        `/api/servers/${serverId}/events/past?page=${pageNum}&search=${searchQuery}&sort=${sortBy}&filter=${filterBy}`
       )
       if (!response.ok) throw new Error("Failed to fetch events")
       const data = await response.json()
@@ -79,7 +81,7 @@ export default function PastEventsPage({ params }: { params: { serverId: string 
       <div className="container px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6">
           <Link
-            href={`/server/${params.serverId}`}
+            href={`/server/${serverId}`}
             className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -90,7 +92,7 @@ export default function PastEventsPage({ params }: { params: { serverId: string 
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <h1 className="text-2xl font-bold sm:text-3xl">Past Events</h1>
           <Button asChild>
-            <Link href={`/server/${params.serverId}#events`}>View Upcoming Events</Link>
+            <Link href={`/server/${serverId}#events`}>View Upcoming Events</Link>
           </Button>
         </div>
 
@@ -148,8 +150,8 @@ export default function PastEventsPage({ params }: { params: { serverId: string 
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {events.map((event) => (
-                <Link key={event.id} href={`/server/${params.serverId}/event/${event.id}`}>
-                  <PastEventCard event={event} serverId={params.serverId} />
+                <Link key={event.id} href={`/server/${serverId}/event/${event.id}`}>
+                  <PastEventCard event={event} serverId={serverId} />
                 </Link>
               ))}
             </div>

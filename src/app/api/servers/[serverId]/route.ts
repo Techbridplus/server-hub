@@ -40,10 +40,36 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
               members: true,
             },
           },
-          events: true,
+          events: {
+            where: {
+              OR: [
+                { startDate: { gt: new Date() } }, // Upcoming events
+              ],
+            },
+            orderBy: [
+              { startDate: 'asc' }, // Sort upcoming events by startDate ascending
+            ],
+          },
           groups: true,
         },
       })
+
+      // Fetch only 3 past events directly from the database
+      const pastEvents = await prisma.event.findMany({
+        where: {
+          serverId: serverId,
+          endDate: { lt: new Date() }, // Past events
+        },
+        orderBy: {
+          endDate: 'desc', // Sort past events by endDate descending (newest first)
+        },
+        take: 3, // Limit to 3 past events
+      })
+
+      // Combine upcoming and past events
+      if (serverBasic) {
+        serverBasic.events = [...serverBasic.events, ...pastEvents]
+      }
 
       if (!serverBasic) {
         return NextResponse.json({ error: "Server not found" }, { status: 404 })

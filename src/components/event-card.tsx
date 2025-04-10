@@ -12,17 +12,19 @@ interface EventCardProps {
   event: Event
   isPast?: boolean
   serverId?: string
+  onClick?: (e: React.MouseEvent) => void
 }
 
-export function EventCard({ event, isPast = false, serverId }: EventCardProps) {
+export function EventCard({ event, isPast = false, serverId, onClick }: EventCardProps) {
   console.log("serverId", serverId)
   console.log("eventId", event.id)
   const router = useRouter()
   return (
     <Card 
-    className={`overflow-hidden transition-all hover:shadow-md h-full ${event.isExclusive ? "border-primary/50" : ""}`}
+      className={`overflow-hidden transition-all hover:shadow-md h-full ${event.isExclusive ? "border-primary/50" : ""}`}
+      onClick={onClick}
     >
-      <div className="relative h-full w-full ">
+      <div className="relative flex h-full w-full flex-col items-start justify-start">
         <Image 
           src={event.imageUrl || "/placeholder.svg"} 
           alt={event.title} 
@@ -45,34 +47,6 @@ export function EventCard({ event, isPast = false, serverId }: EventCardProps) {
               <span>{new Date(event.startDate).toLocaleDateString('en-GB')} {new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           </CardHeader>
-          {/* <CardContent className="pb-2">
-            <div className="flex items-center gap-1 text-sm">
-              <Users className="h-3.5 w-3.5" />
-              <span>{event.} attendees</span>
-            </div>
-          </CardContent> */}
-          <CardFooter>
-            {serverId && (
-              <Link 
-                href={`/server/${serverId}/event/${event.id}`} 
-                className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-                  isPast 
-                    ? "border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2" 
-                    : "bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2",
-                  "w-[60px]"
-                )}
-              >
-                {isPast ? "View Recap" : "RSVP"}
-              </Link>
-            ) 
-            // : (
-            //   <Button variant={isPast ? "outline" : "default"} className="w-full">
-            //     {isPast ? "View Recap" : "RSVP"}
-            //   </Button>
-            // )
-            }
-          </CardFooter>
         </div>
       </div>
     </Card>

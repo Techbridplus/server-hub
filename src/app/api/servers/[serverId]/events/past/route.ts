@@ -3,11 +3,13 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
+import { useRouter } from "next/router"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { serverId: string } }
+  params:Promise<{ serverId: string }>
 ) {
+  const { serverId } = await Promise.resolve(params)
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
@@ -25,7 +27,7 @@ export async function GET(
 
     // Build the where clause
     const where: Prisma.EventWhereInput = {
-      serverId: params.serverId,
+      serverId: serverId,
       endDate: {
         lt: new Date(), // Only past events
       },

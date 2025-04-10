@@ -1,159 +1,124 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect, useRef } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { EventCard } from "./event-card"
+import { useState, useEffect } from "react"
+import Image from "next/image"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
+import { Button } from "@/components/ui/button"
 import { Event } from "@prisma/client"
+// Sample event data structure (replace with your actual data)
 
-interface ModernEventCarouselProps {
+interface EventCarouselProps {
   events: Event[]
-  serverId?: string
+  autoScroll?: boolean
+  autoScrollInterval?: number
+  serverId: string
 }
 
-export function ModernEventCarousel({ events, serverId }: ModernEventCarouselProps) {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const [touchStart, setTouchStart] = useState<number | null>(null)
-  const [touchEnd, setTouchEnd] = useState<number | null>(null)
-  const carouselRef = useRef<HTMLDivElement>(null)
+export default function ModernEventCarousel({ events, autoScroll = true, autoScrollInterval = 5000, serverId }: EventCarouselProps) {
+  const [api, setApi] = useState<any>()
+  const [current, setCurrent] = useState(0)
 
-  // Auto-advance the carousel
+  // Update current index when slide changes
   useEffect(() => {
+    if (!api) return
+
+    const handleSelect = () => {
+      setCurrent(api.selectedScrollSnap())
+    }
+
+    api.on("select", handleSelect)
+    return () => {
+      api.off("select", handleSelect)
+    }
+  }, [api])
+
+  // Auto-scroll functionality
+  useEffect(() => {
+    if (!api || !autoScroll) return
+
     const interval = setInterval(() => {
-      if (!isAnimating) {
-        nextSlide()
-      }
-    }, 5000)
+      api.scrollNext()
+    }, autoScrollInterval)
 
     return () => clearInterval(interval)
-  }, [currentIndex, isAnimating])
+  }, [api, autoScroll, autoScrollInterval])
 
-  const nextSlide = () => {
-    if (isAnimating) return
-
-    setIsAnimating(true)
-    setCurrentIndex((prevIndex) => (prevIndex === events.length - 1 ? 0 : prevIndex + 1))
-
-    setTimeout(() => {
-      setIsAnimating(false)
-    }, 500)
-  }
-
-  const prevSlide = () => {
-    if (isAnimating) return
-
-    setIsAnimating(true)
-    setCurrentIndex((prevIndex) => (prevIndex === 0 ? events.length - 1 : prevIndex - 1))
-
-    setTimeout(() => {
-      setIsAnimating(false)
-    }, 500)
-  }
-
-  const goToSlide = (index: number) => {
-    if (isAnimating || index === currentIndex) return
-
-    setIsAnimating(true)
-    setCurrentIndex(index)
-
-    setTimeout(() => {
-      setIsAnimating(false)
-    }, 500)
-  }
-
-  // Touch event handlers for swipe
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX)
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX)
-  }
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return
-
-    const distance = touchStart - touchEnd
-    const isLeftSwipe = distance > 50
-    const isRightSwipe = distance < -50
-
-    if (isLeftSwipe) {
-      nextSlide()
-    }
-
-    if (isRightSwipe) {
-      prevSlide()
-    }
-
-    setTouchStart(null)
-    setTouchEnd(null)
+  if (!events.length) {
+    return <div className="text-center py-10">No events available</div>
   }
 
   return (
-    <div
-      className="relative overflow-hidden rounded-lg w-full md:h-[450px] " // Enforce 16:9 aspect ratio
-      ref={carouselRef}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      <div
-        className="flex transition-transform duration-500 ease-out h-full"
-        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+    <div className="relative w-full max-w-5xl mx-auto">
+      <Carousel
+        setApi={setApi}
+        className="w-full"
+        opts={{
+          loop: true,
+        }}
       >
-        {events.map((event, index) => (
-          <div
-            key={event.id}
-            className="min-w-full h-full p-1" // Ensure each card takes full width
-          >
-            <div className="transform transition-transform duration-500 hover:scale-[1.02] h-full">
-              <EventCard event={event} serverId={serverId} />
-            </div>
-          </div>
-        ))}
-      </div>
+        <CarouselContent>
+          {events.map((event, index) => (
+            <CarouselItem key={event.id}>
+              <Link href={`/server/${serverId}/event/${event.id}`} className="block relative group">
+                <div className="relative aspect-video overflow-hidden rounded-xl">
+                  <Image
+                    src={event.imageUrl || "/placeholder.svg"}
+                    alt={event.title}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    priority={index === 0}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-80" />
 
-      <div className="absolute inset-0 flex items-center justify-between px-4">
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm transition-transform duration-300 hover:scale-110"
-          onClick={prevSlide}
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span className="sr-only">Previous slide</span>
-        </Button>
+                  {/* Event details overlay */}
+                  <div className="absolute bottom-0 left-0 p-4 md:p-6 w-full md:w-2/3 text-white z-10">
+                    <h3
+                      className="text-xl md:text-2xl font-bold mb-2 line-clamp-1 md:line-clamp-2 overflow-hidden text-ellipsis group-hover:underline"
+                      title={event.title}
+                    >
+                      {event.title}
+                    </h3>
+                    <div className="flex flex-col md:flex-row gap-2 md:gap-4 text-sm md:text-base opacity-90">
+                      <span className="flex items-center">
+                        {new Date(event.startDate).toLocaleDateString()}
+                      </span>
+                      <span className="hidden md:inline-block">•</span>
+                      <span className="flex items-center">{event.location || "No location specified"}</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4 bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-colors"
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              </Link>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
 
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm transition-transform duration-300 hover:scale-110"
-          onClick={nextSlide}
-        >
-          <ChevronRight className="h-4 w-4" />
-          <span className="sr-only">Next slide</span>
-        </Button>
-      </div>
+        <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md border-white/10 text-white hover:bg-white/30" />
+        <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md border-white/10 text-white hover:bg-white/30" />
+      </Carousel>
 
-      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+      {/* Slide indicators */}
+      <div className="flex justify-center gap-2 mt-4">
         {events.map((_, index) => (
           <button
             key={index}
+            onClick={() => api?.scrollTo(index)}
             className={cn(
-              "h-2 w-8 rounded-full transition-all duration-300",
-              index === currentIndex ? "bg-primary w-8" : "bg-muted w-2 hover:w-4",
+              "w-2.5 h-2.5 rounded-full transition-all duration-300",
+              current === index ? "bg-primary w-8" : "bg-gray-300 hover:bg-gray-400",
             )}
-            onClick={() => goToSlide(index)}
-          >
-            <span className="sr-only">Go to slide {index + 1}</span>
-          </button>
+            aria-label={`Go to slide ${index + 1}`}
+          />
         ))}
       </div>
     </div>
   )
 }
-
