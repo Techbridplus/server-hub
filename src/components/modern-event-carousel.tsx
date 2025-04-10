@@ -50,7 +50,7 @@ export default function ModernEventCarousel({ events, autoScroll = true, autoScr
   }
 
   return (
-    <div className="relative w-full max-w-5xl mx-auto">
+    <div className="relative w-full max-w-6xl mx-auto">
       <Carousel
         setApi={setApi}
         className="w-full"
@@ -62,7 +62,7 @@ export default function ModernEventCarousel({ events, autoScroll = true, autoScr
           {events.map((event, index) => (
             <CarouselItem key={event.id}>
               <Link href={`/server/${serverId}/event/${event.id}`} className="block relative group">
-                <div className="relative aspect-video overflow-hidden rounded-xl">
+                <div className="relative aspect-[21/9] md:aspect-[3/1] overflow-hidden rounded-xl">
                   <Image
                     src={event.imageUrl || "/placeholder.svg"}
                     alt={event.title}
@@ -73,24 +73,22 @@ export default function ModernEventCarousel({ events, autoScroll = true, autoScr
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-80" />
 
                   {/* Event details overlay */}
-                  <div className="absolute bottom-0 left-0 p-4 md:p-6 w-full md:w-2/3 text-white z-10">
+                  <div className="absolute bottom-0 left-0 p-3 md:p-4 w-full md:w-2/3 text-white z-10">
                     <h3
-                      className="text-xl md:text-2xl font-bold mb-2 line-clamp-1 md:line-clamp-2 overflow-hidden text-ellipsis group-hover:underline"
+                      className="text-lg md:text-xl font-bold mb-1 line-clamp-1 overflow-hidden text-ellipsis group-hover:underline"
                       title={event.title}
                     >
                       {event.title}
                     </h3>
-                    <div className="flex flex-col md:flex-row gap-2 md:gap-4 text-sm md:text-base opacity-90">
-                      <span className="flex items-center">
-                        {new Date(event.startDate).toLocaleDateString()}
-                      </span>
+                    <div className="flex flex-col md:flex-row gap-1 md:gap-3 text-xs md:text-sm opacity-90">
+                      <span className="flex items-center">{new Date(event.startDate).toLocaleDateString()}</span>
                       <span className="hidden md:inline-block">•</span>
                       <span className="flex items-center">{event.location || "No location specified"}</span>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="mt-4 bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-colors"
+                      className="mt-2 py-1 h-auto text-xs md:text-sm bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-colors"
                     >
                       View Details
                     </Button>
@@ -101,12 +99,12 @@ export default function ModernEventCarousel({ events, autoScroll = true, autoScr
           ))}
         </CarouselContent>
 
-        <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md border-white/10 text-white hover:bg-white/30" />
-        <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md border-white/10 text-white hover:bg-white/30" />
+        <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/20 backdrop-blur-md border-white/10 text-white hover:bg-white/30 z-10" />
+        <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/20 backdrop-blur-md border-white/10 text-white hover:bg-white/30 z-10" />
       </Carousel>
 
       {/* Slide indicators */}
-      <div className="flex justify-center gap-2 mt-4">
+      <div className="flex justify-center gap-1.5 mt-2">
         {events.map((_, index) => (
           <button
             key={index}

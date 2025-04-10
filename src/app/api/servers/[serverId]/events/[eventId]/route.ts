@@ -7,11 +7,11 @@ import { isServerAdmin, authMiddlewareAppRouter } from "@/lib/auth"
 // GET /api/servers/[serverId]/events/[eventId] - Get event details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { serverId: string; eventId: string } }
+  params : Promise<{serverId: string, eventId: string}>
 ) {
   return authMiddlewareAppRouter(request, async (req, session, prisma) => {
     try {
-      const { serverId, eventId } = params;
+      const { serverId, eventId } = await params;
 
       const event = await prisma.event.findUnique({
         where: {
@@ -27,11 +27,7 @@ export async function GET(
           },
           photos: true,
           videos: true,
-          comments: {
-            include: {
-              user: true
-            }
-          }
+          comments: true
         },
       });
 

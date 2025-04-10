@@ -435,8 +435,8 @@ export default function ServerPage() {
 
             {/* Today's events */}
             {upcomingEvents.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Today</h3>
+              <div className="">
+
                 <ModernEventCarousel events={upcomingEvents} serverId={serverId} />
               </div>
             )}

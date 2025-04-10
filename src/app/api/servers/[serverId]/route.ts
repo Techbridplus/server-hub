@@ -43,7 +43,7 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
           events: {
             where: {
               OR: [
-                { startDate: { gt: new Date() } }, // Upcoming events
+                { startDate: { gte: new Date() } }, // Upcoming events
               ],
             },
             orderBy: [
