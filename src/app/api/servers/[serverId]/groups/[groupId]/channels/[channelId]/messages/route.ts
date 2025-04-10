@@ -1,15 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { authMiddlewareAppRouter, isGroupMember } from "@/lib/auth"
-//import prisma from "@/lib/prisma" // Import prisma
+import { authMiddlewareAppRouter } from "@/lib/auth"
+import prisma from "@/lib/prisma"
 
 // GET /api/servers/[serverId]/groups/[groupId]/channels/[channelId]/messages - Get channel messages
 export async function GET(
   req: NextRequest,
   { params }: { params: { serverId: string; groupId: string; channelId: string } },
 ) {
-const prisma = {};
   try {
-    const { serverId, groupId, channelId } = params
+    // Access params directly without awaiting
+    const { serverId, groupId, channelId } = await params
     const { searchParams } = new URL(req.url)
     const cursor = searchParams.get("cursor")
     const limit = Number.parseInt(searchParams.get("limit") || "50")
@@ -71,12 +71,19 @@ export async function POST(
 ) {
   return authMiddlewareAppRouter(req, async (req, session, prisma) => {
     try {
-      const { serverId, groupId, channelId } = params
+      // Access params directly without awaiting
+      const { serverId, groupId, channelId } = await params
       const { content } = await req.json()
 
       // Check if user is group member
-      const isMember = await isGroupMember(session.user.id, groupId)
-      if (!isMember) {
+      const groupMember = await prisma.groupMember.findFirst({
+        where: {
+          userId: session.user.id,
+          groupId,
+        },
+      })
+
+      if (!groupMember) {
         return NextResponse.json({ error: "You must be a group member to send messages" }, { status: 403 })
       }
 

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Heart, MessageSquare, AlertTriangle, ChevronDown, ChevronUp, MoreHorizontal, Edit, Trash } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Heart, MessageSquare, AlertTriangle, ChevronDown, ChevronUp, MoreHorizontal, Edit, Trash, MessageCircle, Send } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -34,48 +34,258 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Announcement } from "@prisma/client"
+import { formatDistanceToNow, isValid } from "date-fns"
+import { useSession } from "next-auth/react"
 
 // Extend the Announcement type with additional fields
-interface ExtendedAnnouncement extends Announcement {
-  reactions?: number
-  isImportant?: boolean
-  author?: string
-  date?: string
-  comments?: number
+
+
+interface Comment {
+  id: string
+  content: string
+  createdAt: string
+  user: {
+    id: string
+    name: string
+    image: string | null
+  }
+}
+
+interface Author {
+  id: string
+  name: string
+  image: string | null
 }
 
 interface AnnouncementCardProps {
-  announcement: ExtendedAnnouncement
+  id: string
+  title: string
+  content: string
+  isImportant: boolean
+  createdAt: string
+  author: Author | string | null
   canEdit?: boolean
   serverId?: string
 }
 
-export function AnnouncementCard({ announcement, canEdit = false, serverId }: AnnouncementCardProps) {
+export function AnnouncementCard({
+  id,
+  title,
+  content,
+  isImportant,
+  createdAt,
+  author,
+  canEdit = false,
+  serverId,
+}: AnnouncementCardProps) {
+  const { data: session } = useSession()
   const [liked, setLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(announcement.reactions || 0)
+  const [likeCount, setLikeCount] = useState(0)
   const [showComments, setShowComments] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [comments, setComments] = useState<Comment[]>([])
+  const [newComment, setNewComment] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [isLiking, setIsLiking] = useState(false)
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
 
   // Edit form state
-  const [editTitle, setEditTitle] = useState(announcement.title)
-  const [editContent, setEditContent] = useState(announcement.content)
-  const [editIsImportant, setEditIsImportant] = useState(announcement.isImportant || false)
+  const [editTitle, setEditTitle] = useState(title)
+  const [editContent, setEditContent] = useState(content)
+  const [editIsImportant, setEditIsImportant] = useState(isImportant)
   const [isEditing, setIsEditing] = useState(false)
 
-  // Default values for missing properties
-  const author = announcement.author || "Unknown"
-  const date = announcement.date || new Date(announcement.createdAt).toLocaleDateString()
-  const comments = announcement.comments || 0
-  const isImportant = announcement.isImportant || false
+  // Handle author information safely
+  const authorName = typeof author === 'string' 
+    ? author 
+    : author?.name || 'Unknown User'
+  const authorImage = typeof author === 'string' 
+    ? null 
+    : author?.image || null
 
-  const handleLike = () => {
-    if (liked) {
-      setLikeCount(likeCount - 1)
-    } else {
-      setLikeCount(likeCount + 1)
+  // Safely format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return isValid(date) 
+      ? formatDistanceToNow(date, { addSuffix: true }) 
+      : 'Unknown date'
+  }
+
+  useEffect(() => {
+    if (id) {
+      fetchLikes()
+      fetchComments()
     }
-    setLiked(!liked)
+  }, [id])
+
+  const fetchLikes = async () => {
+    if (!id) return;
+    
+    try {
+      console.log(`Fetching likes for announcement: ${id}`);
+      const response = await fetch(`/api/announcements/${id}/likes`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error fetching likes:", errorData);
+        return;
+      }
+      
+      const data = await response.json();
+      console.log("Likes data:", data);
+      setLiked(data.userLiked);
+      setLikeCount(data.count);
+    } catch (error) {
+      console.error("Error fetching likes:", error);
+    }
+  }
+
+  const fetchComments = async () => {
+    if (!id) return;
+    
+    try {
+      console.log(`Fetching comments for announcement: ${id}`);
+      const response = await fetch(`/api/announcements/${id}/comments`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error fetching comments:", errorData);
+        return;
+      }
+      
+      const data = await response.json();
+      console.log("Comments data:", data);
+      setComments(data.comments || []);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      setComments([]);
+    }
+  }
+
+  const handleLike = async () => {
+    if (!session?.user || !id) {
+      console.log("Cannot like: No session or ID", { session, id });
+      return;
+    }
+
+    // Optimistic update
+    setIsLiking(true);
+    const previousLiked = liked;
+    const previousCount = likeCount;
+    
+    // Update UI immediately
+    setLiked(!previousLiked);
+    setLikeCount(previousLiked ? previousCount - 1 : previousCount + 1);
+
+    try {
+      console.log(`Toggling like for announcement: ${id}`);
+      const response = await fetch(`/api/announcements/${id}/likes`, {
+        method: "POST",
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error toggling like:", errorData);
+        // Revert optimistic update on error
+        setLiked(previousLiked);
+        setLikeCount(previousCount);
+        return;
+      }
+      
+      const data = await response.json();
+      console.log("Like toggle response:", data);
+      
+      // Only update if the server response differs from our optimistic update
+      if (data.liked !== !previousLiked) {
+        setLiked(data.liked);
+        setLikeCount(data.count);
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      // Revert optimistic update on error
+      setLiked(previousLiked);
+      setLikeCount(previousCount);
+    } finally {
+      setIsLiking(false);
+    }
+  }
+
+  const handleComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session?.user || !newComment.trim() || !id) {
+      console.log("Cannot comment: No session, empty comment, or no ID", { 
+        session, 
+        commentLength: newComment.length, 
+        id 
+      });
+      return;
+    }
+
+    // Optimistic update
+    setIsSubmittingComment(true);
+    const commentText = newComment;
+    setNewComment("");
+    
+    // Create a temporary comment object
+    const tempComment: Comment = {
+      id: `temp-${Date.now()}`,
+      content: commentText,
+      createdAt: new Date().toISOString(),
+      user: {
+        id: session.user.id,
+        name: session.user.name || "User",
+        image: session.user.image || null,
+      }
+    };
+    
+    // Add the temporary comment to the UI
+    setComments([tempComment, ...comments]);
+
+    try {
+      console.log(`Adding comment to announcement: ${id}`);
+      const response = await fetch(`/api/announcements/${id}/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content: commentText }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error adding comment:", errorData);
+        // Remove the temporary comment on error
+        setComments(prevComments => 
+          prevComments.filter(comment => comment.id !== tempComment.id)
+        );
+        // Restore the comment text
+        setNewComment(commentText);
+        return;
+      }
+      
+      const data = await response.json();
+      console.log("Comment response:", data);
+      
+      if (data.comment) {
+        // Replace the temporary comment with the real one
+        setComments(prevComments => 
+          prevComments.map(comment => 
+            comment.id === tempComment.id ? data.comment : comment
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      // Remove the temporary comment on error
+      setComments(prevComments => 
+        prevComments.filter(comment => comment.id !== tempComment.id)
+      );
+      // Restore the comment text
+      setNewComment(commentText);
+    } finally {
+      setIsSubmittingComment(false);
+    }
   }
 
   const toggleComments = () => {
@@ -92,12 +302,8 @@ export function AnnouncementCard({ announcement, canEdit = false, serverId }: An
 
       // In a real app, you would update the announcement in the database
       // For now, we'll just update the local state
-      announcement.title = editTitle
-      announcement.content = editContent
-      announcement.isImportant = editIsImportant
-
-      // Show success message
-      alert("Announcement updated successfully!")
+      // Assuming you have a way to update the announcement in the database
+      // This is a placeholder and should be replaced with actual database update logic
     }, 1000)
   }
 
@@ -109,89 +315,92 @@ export function AnnouncementCard({ announcement, canEdit = false, serverId }: An
   }
 
   return (
-    <Card className={isImportant ? "border-destructive/50 bg-destructive/5" : ""}>
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-2">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={`/placeholder.svg?height=32&width=32`} alt={author} />
-              <AvatarFallback>{author.substring(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold">{announcement.title}</h3>
-                {isImportant && (
-                  <Badge variant="outline" className="border-destructive text-destructive">
-                    <AlertTriangle className="mr-1 h-3 w-3" />
-                    Important
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <span>{author}</span>
-                <span>•</span>
-                <span>{date}</span>
-              </div>
-            </div>
-          </div>
-
-          {canEdit && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="h-4 w-4" />
-                  <span className="sr-only">Actions</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DialogTrigger asChild onClick={() => setShowEditDialog(true)}>
-                  <DropdownMenuItem>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                </DialogTrigger>
-                <AlertDialogTrigger asChild onClick={() => setShowDeleteDialog(true)}>
-                  <DropdownMenuItem className="text-destructive focus:text-destructive">
-                    <Trash className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+    <Card className={`mb-4 ${isImportant ? "border-red-500" : ""}`}>
+      <CardHeader className="flex flex-row items-center space-x-4">
+        <Avatar>
+          <AvatarImage src={authorImage || undefined} />
+          <AvatarFallback>{authorName[0]}</AvatarFallback>
+        </Avatar>
+        <div>
+          <h3 className="font-semibold">{title}</h3>
+          <p className="text-sm text-gray-500">
+            {authorName} • {formatDate(createdAt)}
+          </p>
         </div>
       </CardHeader>
-      <CardContent className="pb-2">
-        <p>{announcement.content}</p>
+      <CardContent>
+        <p className="mb-4">{content}</p>
+        <div className="flex items-center space-x-4 mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`flex items-center space-x-2 ${liked ? "text-red-500" : ""}`}
+            onClick={handleLike}
+            disabled={isLiking}
+          >
+            <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
+            <span>{likeCount}</span>
+            {isLiking && <span className="ml-1 text-xs">...</span>}
+          </Button>
+          <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+            <MessageCircle className="h-4 w-4" />
+            <span>{comments.length}</span>
+          </Button>
+        </div>
+        <div className="space-y-4">
+          <form onSubmit={handleComment} className="flex space-x-2">
+            <Input
+              placeholder="Add a comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              disabled={isSubmittingComment}
+            />
+            <Button type="submit" size="icon" disabled={isSubmittingComment || !newComment.trim()}>
+              {isSubmittingComment ? (
+                <span className="h-4 w-4 animate-spin">...</span>
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </form>
+          <div className="space-y-4">
+            {comments.map((comment) => (
+              <div key={comment.id} className="flex space-x-4">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={comment.user.image || undefined} />
+                  <AvatarFallback>{comment.user.name[0]}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-medium">{comment.user.name}</p>
+                  <p className="text-sm text-gray-500">{comment.content}</p>
+                  <p className="text-xs text-gray-400">
+                    {formatDate(comment.createdAt)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </CardContent>
       <CardFooter className="flex flex-col">
         <div className="flex w-full justify-between">
           <div className="flex gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`flex items-center gap-1 ${liked ? "text-red-500" : ""}`}
-              onClick={handleLike}
-            >
-              <Heart className={`h-4 w-4 ${liked ? "fill-red-500" : ""}`} />
-              <span>{likeCount}</span>
-            </Button>
             <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={toggleComments}>
               <MessageSquare className="h-4 w-4" />
-              <span>{comments}</span>
+              <span>{comments.length}</span>
               {showComments ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />}
             </Button>
           </div>
           <ShareDialog
-            title={announcement.title}
-            url={serverId ? `/server/${serverId}/announcement/${announcement.id}` : `/announcement/${announcement.id}`}
+            title={title}
+            url={serverId ? `/server/${serverId}/announcement/${id}` : `/announcement/${id}`}
             type="announcement"
           />
         </div>
 
         {showComments && (
           <div className="mt-4 w-full">
-            <CommentSection resourceId={announcement.id} resourceType="announcement" />
+            <CommentSection resourceId={id} resourceType="announcement" />
           </div>
         )}
       </CardFooter>

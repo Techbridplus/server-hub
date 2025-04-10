@@ -13,7 +13,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { groupId } = params
+    const { groupId } = await params
 
     // Fetch group with channels and members
     const group = await prisma.group.findUnique({

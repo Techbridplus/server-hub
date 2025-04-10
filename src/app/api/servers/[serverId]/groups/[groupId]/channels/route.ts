@@ -1,12 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { authMiddlewareAppRouter, isGroupAdmin } from "@/lib/auth"
-//import { prisma } from "@/lib/db"
+import { authMiddlewareAppRouter } from "@/lib/auth"
+import prisma from "@/lib/prisma"
 
 // GET /api/servers/[serverId]/groups/[groupId]/channels - Get group channels
 export async function GET(req: NextRequest, { params }: { params: { serverId: string; groupId: string } }) {
-const prisma = {};
   try {
-    const { serverId, groupId } = params
+      const serverId = await Promise.resolve(params.serverId)
+      const groupId = await Promise.resolve(params.groupId)
+
+    if (!serverId || !groupId) {
+      return NextResponse.json({ error: "Server ID and Group ID are required" }, { status: 400 })
+    }
 
     // Get channels
     const channels = await prisma.channel.findMany({
@@ -33,12 +37,25 @@ const prisma = {};
 export async function POST(req: NextRequest, { params }: { params: { serverId: string; groupId: string } }) {
   return authMiddlewareAppRouter(req, async (req, session, prisma) => {
     try {
-      const { serverId, groupId } = params
-      const { name, type, isPrivate } = await req.json()
+      const serverId = await Promise.resolve(params.serverId)
+      const groupId = await Promise.resolve(params.groupId)
+
+      if (!serverId || !groupId) {
+        return NextResponse.json({ error: "Server ID and Group ID are required" }, { status: 400 })
+      }
+
+      const { name, type } = await req.json()
 
       // Check if user is group admin
-      const isAdmin = await isGroupAdmin(session.user.id, groupId)
-      if (!isAdmin) {
+      const groupMember = await prisma.groupMember.findFirst({
+        where: {
+          groupId,
+          userId: session.user.id,
+          role: "ADMIN",
+        },
+      })
+
+      if (!groupMember) {
         return NextResponse.json({ error: "Only group admins can create channels" }, { status: 403 })
       }
 
@@ -52,7 +69,6 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
         data: {
           name,
           type: type || "text",
-          isPrivate: isPrivate || false,
           group: {
             connect: {
               id: groupId,

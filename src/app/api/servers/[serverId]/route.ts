@@ -1,52 +1,112 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter, isServerAdmin } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-import { Server } from "@prisma/client"
+import { Server, Announcement } from "@prisma/client"
 
 
 // GET /api/servers/[serverId] - Get server details
 export async function GET(req: NextRequest, { params }: { params: { serverId: string } }) {
   return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+    try {
+      const {serverId}  =  await Promise.resolve(params)
+      const userId = session.user.id
 
-      try {
-        // Ensure params is properly awaited
-        const { serverId } = await Promise.resolve(params)
-        const userId = session.user.id
-        const server = await prisma.server.findUnique({
-          where: {
-            id: serverId,
-          },
-          include: {
-            members: {
-                where: {
-                  userId: userId, // Fetch only the specific user's role in the server
-                },
-                select: {
-                  role: true, // Include only the role field
-                },
-            },
-            _count: {
-                select: {
-                  members: true, // Fetch the total number of members
-                },
-            },
-            events: true,
-            groups: true,
-            announcements: true,
-          },
-        });
+      // First check if the server exists
+      const serverExists = await prisma.server.findUnique({
+        where: { id: serverId },
+        select: { id: true }
+      })
 
-        if (!server) {
-          return NextResponse.json({ error: "Server not found" }, { status: 404 })
-        }
-
-        return NextResponse.json(server ) 
-
-      } catch (error) {
-        console.error("Error fetching server:", error)
-        return NextResponse.json({ error: "Failed to fetch server" }, { status: 500 })
+      if (!serverExists) {
+        return NextResponse.json({ error: "Server not found" }, { status: 404 })
       }
-    })
+
+      // Get server basic info without announcements
+      const serverBasic = await prisma.server.findUnique({
+        where: {
+          id: serverId,
+        },
+        include: {
+          members: {
+            where: {
+              userId: userId,
+            },
+            select: {
+              role: true,
+            },
+          },
+          _count: {
+            select: {
+              members: true,
+            },
+          },
+          events: true,
+          groups: true,
+        },
+      })
+
+      if (!serverBasic) {
+        return NextResponse.json({ error: "Server not found" }, { status: 404 })
+      }
+
+      // Get announcements separately with error handling
+      let announcements: any[] = []
+      try {
+        // Get all announcements for the server
+        const allAnnouncements = await prisma.announcement.findMany({
+          where: {
+            serverId,
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        })
+        
+        // Filter out announcements with null authorId
+        const validAnnouncements = allAnnouncements.filter(a => a.authorId)
+        
+        // Get author information for valid announcements
+        if (validAnnouncements.length > 0) {
+          const authorIds = validAnnouncements.map(a => a.authorId)
+          const authors = await prisma.user.findMany({
+            where: {
+              id: {
+                in: authorIds
+              }
+            },
+            select: {
+              id: true,
+              name: true,
+              image: true
+            }
+          })
+          
+          // Create a map of author IDs to author objects
+          const authorMap = new Map(authors.map(a => [a.id, a]))
+          
+          // Combine announcements with author information
+          announcements = validAnnouncements.map(a => ({
+            ...a,
+            author: authorMap.get(a.authorId) || null
+          }))
+        }
+      } catch (error) {
+        console.error("Error fetching announcements:", error)
+        // Continue with empty announcements array
+      }
+
+      // Combine the data
+      const server = {
+        ...serverBasic,
+        announcements
+      }
+
+      return NextResponse.json(server)
+    } catch (error) {
+      console.error("Error fetching server:", error)
+      return NextResponse.json({ error: "Failed to fetch server" }, { status: 500 })
+    }
+  })
 }
 
 // PUT /api/servers/[serverId] - Update server

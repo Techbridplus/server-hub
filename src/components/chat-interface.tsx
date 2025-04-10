@@ -243,11 +243,11 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-x-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={group.owner.image || undefined} />
-                    <AvatarFallback>{group.owner.name?.charAt(0) || "U"}</AvatarFallback>
+                    <AvatarImage src={group.owner?.image || undefined} />
+                    <AvatarFallback>{group.owner?.name?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-medium">{group.owner.name}</p>
+                    <p className="text-sm font-medium">{group.owner?.name || "Unknown Owner"}</p>
                     <p className="text-xs text-muted-foreground">Owner</p>
                   </div>
                 </div>
@@ -328,11 +328,11 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-x-2">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={group.owner.image || undefined} />
-                <AvatarFallback>{group.owner.name?.charAt(0) || "U"}</AvatarFallback>
+                <AvatarImage src={group.owner?.image || undefined} />
+                <AvatarFallback>{group.owner?.name?.charAt(0) || "U"}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-sm font-medium">{group.owner.name}</p>
+                <p className="text-sm font-medium">{group.owner?.name || "Unknown Owner"}</p>
                 <p className="text-xs text-muted-foreground">Owner</p>
               </div>
             </div>

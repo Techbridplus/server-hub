@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useSocket } from "@/hooks/use-socket"
@@ -53,8 +53,9 @@ interface GroupPageProps {
   }
 }
 
-export default function GroupPage({ params }: GroupPageProps) {
-  const { groupId } = params
+export default function GroupPage() {
+  const params = useParams();
+  const groupId = params.groupId as string;
   const searchParams = useSearchParams()
   const channelId = searchParams.get("channel")
   const { data: session } = useSession()
