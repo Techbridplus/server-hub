@@ -1,116 +1,83 @@
-import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import prisma from "@/lib/prisma"
+import { type NextRequest, NextResponse } from "next/server"
+import { authMiddlewareAppRouter } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 
-// Toggle like on an announcement
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { announcementId: string } }
-) {
+// GET /api/announcements/[announcementId]/likes - Get likes for an announcement
+export async function GET(req: NextRequest, { params }: { params: { announcementId: string } }) {
+  const {announcementId} = await params
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const { searchParams } = new URL(req.url)
+    const userId = searchParams.get("userId")
 
-    const userId = session.user.id
-    const announcementId = params.announcementId
+    const [count, userLiked] = await Promise.all([
+      prisma.like.count({
+        where: { announcementId: announcementId },
+      }),
+      userId
+        ? prisma.like.findUnique({
+            where: {
+              userId_announcementId: {
+                userId,
+                announcementId: announcementId,
+              },
+            },
+          })
+        : null,
+    ])
 
-    if (!announcementId) {
-      return NextResponse.json({ error: "Announcement ID is required" }, { status: 400 })
-    }
-
-    // Check if the announcement exists
-    const announcement = await prisma.announcement.findUnique({
-      where: { id: announcementId },
+    return NextResponse.json({
+      count,
+      userLiked: !!userLiked,
     })
-
-    if (!announcement) {
-      return NextResponse.json({ error: "Announcement not found" }, { status: 404 })
-    }
-
-    // Check if the user has already liked the announcement
-    const existingLike = await prisma.like.findFirst({
-      where: {
-        userId,
-        announcementId,
-      },
-    })
-
-    if (existingLike) {
-      // Unlike: Remove the like
-      await prisma.like.delete({
-        where: {
-          id: existingLike.id,
-        },
-      })
-
-      return NextResponse.json({ liked: false })
-    } else {
-      // Like: Create a new like
-      await prisma.like.create({
-        data: {
-          userId,
-          announcementId,
-        },
-      })
-
-      return NextResponse.json({ liked: true })
-    }
   } catch (error) {
-    console.error("Error toggling like:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Error fetching likes:", error)
+    return NextResponse.json({ error: "Failed to fetch likes" }, { status: 500 })
   }
 }
 
-// Get likes for an announcement
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { announcementId: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const userId = session.user.id
-    const announcementId = params.announcementId
-
-    if (!announcementId) {
-      return NextResponse.json({ error: "Announcement ID is required" }, { status: 400 })
-    }
-
-    // Get all likes for the announcement
-    const likes = await prisma.like.findMany({
-      where: { announcementId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
+// POST /api/announcements/[announcementId]/likes - Toggle like on an announcement
+export async function POST(req: NextRequest, { params }: { params: { announcementId: string } }) {
+  const {announcementId} = await params
+  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+    try {
+      const existingLike = await prisma.like.findUnique({
+        where: {
+          userId_announcementId: {
+            userId: session.user.id,
+            announcementId: announcementId,
           },
         },
-      },
-    })
+      })
 
-    // Check if the current user has liked the announcement
-    const userLike = await prisma.like.findFirst({
-      where: {
-        userId,
-        announcementId,
-      },
-    })
+      if (existingLike) {
+        await prisma.like.delete({
+          where: {
+            userId_announcementId: {
+              userId: session.user.id,
+              announcementId: announcementId,
+            },
+          },
+        })
+      } else {
+        await prisma.like.create({
+          data: {
+            userId: session.user.id,
+            announcementId: announcementId,
+          },
+        })
+      }
 
-    return NextResponse.json({
-      likes,
-      userLiked: !!userLike,
-      count: likes.length,
-    })
-  } catch (error) {
-    console.error("Error getting likes:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
+      const count = await prisma.like.count({
+        where: { announcementId: announcementId },
+      })
+
+      return NextResponse.json({
+        liked: !existingLike,
+        count,
+      })
+    } catch (error) {
+      console.error("Error toggling like:", error)
+      return NextResponse.json({ error: "Failed to toggle like" }, { status: 500 })
+    }
+  })
 } 

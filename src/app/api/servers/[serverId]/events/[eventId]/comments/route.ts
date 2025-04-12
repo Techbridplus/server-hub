@@ -10,6 +10,7 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "20")
     const skip = (page - 1) * limit
+    const userId = searchParams.get("userId")
 
     // Get comments with pagination
     const comments = await prisma.eventComment.findMany({
@@ -23,6 +24,16 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
         event: {
           select: {
             serverId: true,
+          },
+        },
+        likes: {
+          where: userId ? {
+            userId: userId,
+          } : undefined,
+        },
+        _count: {
+          select: {
+            likes: true,
           },
         },
       },
@@ -57,6 +68,8 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
         return {
           ...comment,
           author: user,
+          isLiked: comment.likes.length > 0,
+          likes: comment._count.likes,
         }
       })
     )

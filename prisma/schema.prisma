@@ -32,6 +32,8 @@ model User {
   announcements Announcement[] @relation("AnnouncementAuthor")
   likes         Like[]         @relation("UserLikes")
   comments      Comment[]      @relation("UserComments")
+  eventComments EventComment[] @relation("EventCommentAuthor")
+  commentLikes  CommentLike[]  @relation("CommentLikeUser")
 }
 
 model Account {
@@ -196,6 +198,20 @@ model EventComment {
   updatedAt DateTime @updatedAt
 
   event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation("EventCommentAuthor", fields: [userId], references: [id])
+  likes CommentLike[]
+}
+
+model CommentLike {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  commentId String   @db.ObjectId
+  createdAt DateTime @default(now())
+
+  user    User        @relation("CommentLikeUser", fields: [userId], references: [id])
+  comment EventComment @relation(fields: [commentId], references: [id])
+
+  @@unique([userId, commentId])
 }
 
 model Group {

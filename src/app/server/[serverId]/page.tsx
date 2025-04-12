@@ -26,13 +26,25 @@ import { useParams } from "next/navigation"
 import { Server, MemberRole, Event, Group, Announcement, ServerMember } from "@prisma/client"
 import { PastEventCard } from "@/components/past-event-card"
 
+// Define the AnnouncementWithAuthor interface
+interface AnnouncementWithAuthor extends Announcement {
+  author: {
+    id: string;
+    name: string;
+    image: string;
+  };
+  _count: {
+    likes: number;
+    comments: number;
+  };
+}
 
 // Extend the Server type to include the `members` property
 interface ServerWithMembers extends Server {
   members: { role: MemberRole }[];
   events: Event[];
   groups: Group[];
-  announcements: Announcement[];
+  announcements: AnnouncementWithAuthor[];
   _count: {
     members: number;
     events: number;
@@ -61,7 +73,7 @@ export default function ServerPage() {
   const [pastEvents, setPastEvents] = useState<Event[]>([])
 
   // Announcements data
-  const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [announcements, setAnnouncements] = useState<AnnouncementWithAuthor[]>([])
 
   // Groups data
   const [groups, setGroups] = useState<Group[]>([])
@@ -117,7 +129,9 @@ export default function ServerPage() {
   const refreshAnnouncements = async () => {
     try {
       const response = await axios.get(`/api/servers/${serverId}/announcements`);
-      setAnnouncements(response.data.announcements);
+      if (response.data.announcements) {
+        setAnnouncements(response.data.announcements);
+      }
     } catch (error) {
       console.error("Error refreshing announcements:", error);
       toast({
@@ -126,6 +140,20 @@ export default function ServerPage() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleAnnouncementUpdated = (updatedAnnouncement: AnnouncementWithAuthor) => {
+    setAnnouncements(prevAnnouncements => 
+      prevAnnouncements.map(announcement => 
+        announcement.id === updatedAnnouncement.id ? updatedAnnouncement : announcement
+      )
+    );
+  };
+
+  const handleAnnouncementDeleted = (announcementId: string) => {
+    setAnnouncements(prevAnnouncements => 
+      prevAnnouncements.filter(announcement => announcement.id !== announcementId)
+    );
   };
 
   // Function to refresh groups
@@ -498,12 +526,14 @@ export default function ServerPage() {
                 <div className="space-y-4">
                   {announcements.length > 0 ? (
                     announcements.map((announcement) => (
-                      <AnnouncementCard
-                        key={announcement.id}
-                        announcement={announcement}
-                        canEdit={hasEditRights}
-                        serverId={serverId}
-                      />
+                      <div className="mb-4" key={announcement.id}>
+                        <AnnouncementCard
+                          announcement={announcement}
+                          serverId={serverId}
+                          onAnnouncementUpdated={handleAnnouncementUpdated}
+                          onAnnouncementDeleted={handleAnnouncementDeleted}
+                        />
+                      </div>
                     ))
                   ) : (
                     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
@@ -645,8 +675,9 @@ export default function ServerPage() {
                       <AnnouncementCard
                         key={announcement.id}
                         announcement={announcement}
-                        canEdit={hasEditRights}
                         serverId={serverId}
+                        onAnnouncementUpdated={handleAnnouncementUpdated}
+                        onAnnouncementDeleted={handleAnnouncementDeleted}
                       />
                     ))
                   ) : (

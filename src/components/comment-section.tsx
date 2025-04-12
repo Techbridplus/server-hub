@@ -43,7 +43,7 @@ export function CommentSection({ resourceId, resourceType }: CommentSectionProps
     const fetchComments = async () => {
       try {
         setIsLoading(true)
-        const response = await fetch(`/api/${resourceType}s/${resourceId}/comments`)
+        const response = await fetch(`/api/${resourceType}s/${resourceId}/comments?userId=${session?.user?.id || ""}`)
         
         if (!response.ok) {
           throw new Error('Failed to fetch comments')
@@ -64,7 +64,7 @@ export function CommentSection({ resourceId, resourceType }: CommentSectionProps
     }
 
     fetchComments()
-  }, [resourceId, resourceType])
+  }, [resourceId, resourceType, session?.user?.id])
 
   const handleAddComment = async () => {
     if (!newComment.trim() || !session?.user) return
@@ -134,7 +134,7 @@ export function CommentSection({ resourceId, resourceType }: CommentSectionProps
             ? { 
                 ...comment, 
                 likes: updatedComment.likes, 
-                isLiked: updatedComment.isLiked 
+                isLiked: updatedComment.liked 
               } 
             : comment
         )
