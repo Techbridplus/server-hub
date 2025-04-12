@@ -21,7 +21,7 @@ function ServerSidebar() {
     const [myServers, setMyServers] = useState<Server[]>([])
     const [joinedServers, setJoinedServers] = useState<Server[]>([])
     const [isLoading, setIsLoading] = useState(true)
-
+    console.log("image:", session?.user?.image)
     useEffect(() => {
         if (session) {
             axios.get("/api/users/me/servers?owned=true")

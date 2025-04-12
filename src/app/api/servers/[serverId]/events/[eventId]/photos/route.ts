@@ -1,10 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { authMiddlewareAppRouter, isServerMember } from "@/lib/auth"
-//import { prisma } from "@/lib/prisma"
+import { authMiddlewareAppRouter } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 
 // GET /api/servers/[serverId]/events/[eventId]/photos - Get event photos
 export async function GET(req: NextRequest, { params }: { params: { serverId: string; eventId: string } }) {
-const prisma = {};
   try {
     const { serverId, eventId } = params
     const { searchParams } = new URL(req.url)
@@ -13,31 +12,22 @@ const prisma = {};
     const skip = (page - 1) * limit
 
     // Get photos with pagination
-    const photos = await prisma.photo.findMany({
+    const photos = await prisma.eventPhoto.findMany({
       where: {
         eventId,
         event: {
           serverId,
         },
       },
-      include: {
-        uploader: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-      },
-      skip,
-      take: limit,
       orderBy: {
         uploadedAt: "desc",
       },
+      skip,
+      take: limit,
     })
 
     // Get total count for pagination
-    const total = await prisma.photo.count({
+    const total = await prisma.eventPhoto.count({
       where: {
         eventId,
         event: {
@@ -65,12 +55,18 @@ const prisma = {};
 export async function POST(req: NextRequest, { params }: { params: { serverId: string; eventId: string } }) {
   return authMiddlewareAppRouter(req, async (req, session, prisma) => {
     try {
-      const { serverId, eventId } = params
-      const { url, description } = await req.json()
+      const { serverId, eventId } = await params
+      const { url, caption } = await req.json()
 
       // Check if user is server member
-      const isMember = await isServerMember(session.user.id, serverId)
-      if (!isMember) {
+      const serverMember = await prisma.serverMember.findFirst({
+        where: {
+          userId: session.user.id,
+          serverId,
+        },
+      })
+
+      if (!serverMember) {
         return NextResponse.json({ error: "You must be a member to upload photos" }, { status: 403 })
       }
 
@@ -87,20 +83,12 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
       }
 
       // Create photo
-      const photo = await prisma.photo.create({
+      const photo = await prisma.eventPhoto.create({
         data: {
           url,
-          description,
-          uploader: {
-            connect: {
-              id: session.user.id,
-            },
-          },
-          event: {
-            connect: {
-              id: eventId,
-            },
-          },
+          caption,
+          uploadedBy: session.user.id,
+          eventId,
         },
       })
 

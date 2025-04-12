@@ -1,10 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { authMiddlewareAppRouter, isServerMember } from "@/lib/auth"
-//import { prisma } from "@/lib/db"
+import { authMiddlewareAppRouter } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 
 // GET /api/servers/[serverId]/events/[eventId]/comments - Get event comments
 export async function GET(req: NextRequest, { params }: { params: { serverId: string; eventId: string } }) {
-const prisma = {};
   try {
     const { serverId, eventId } = params
     const { searchParams } = new URL(req.url)
@@ -13,46 +12,17 @@ const prisma = {};
     const skip = (page - 1) * limit
 
     // Get comments with pagination
-    const comments = await prisma.comment.findMany({
+    const comments = await prisma.eventComment.findMany({
       where: {
         eventId,
         event: {
           serverId,
         },
-        parentId: null, // Only get top-level comments
       },
       include: {
-        author: {
+        event: {
           select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-        _count: {
-          select: {
-            likes: true,
-            replies: true,
-          },
-        },
-        replies: {
-          take: 3, // Get first 3 replies
-          include: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-              },
-            },
-            _count: {
-              select: {
-                likes: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: "asc",
+            serverId: true,
           },
         },
       },
@@ -64,18 +34,35 @@ const prisma = {};
     })
 
     // Get total count for pagination
-    const total = await prisma.comment.count({
+    const total = await prisma.eventComment.count({
       where: {
         eventId,
         event: {
           serverId,
         },
-        parentId: null,
       },
     })
 
+    // Get user information for each comment
+    const commentsWithUsers = await Promise.all(
+      comments.map(async (comment) => {
+        const user = await prisma.user.findUnique({
+          where: { id: comment.userId },
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        })
+        return {
+          ...comment,
+          author: user,
+        }
+      })
+    )
+
     return NextResponse.json({
-      comments,
+      comments: commentsWithUsers,
       pagination: {
         total,
         page,
@@ -94,11 +81,17 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
   return authMiddlewareAppRouter(req, async (req, session, prisma) => {
     try {
       const { serverId, eventId } = params
-      const { content, parentId } = await req.json()
+      const { content } = await req.json()
 
       // Check if user is server member
-      const isMember = await isServerMember(session.user.id, serverId)
-      if (!isMember) {
+      const serverMember = await prisma.serverMember.findFirst({
+        where: {
+          userId: session.user.id,
+          serverId,
+        },
+      })
+
+      if (!serverMember) {
         return NextResponse.json({ error: "You must be a member to comment" }, { status: 403 })
       }
 
@@ -114,54 +107,29 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
         return NextResponse.json({ error: "Event not found" }, { status: 404 })
       }
 
-      // If this is a reply, check if parent comment exists
-      if (parentId) {
-        const parentComment = await prisma.comment.findUnique({
-          where: {
-            id: parentId,
-            eventId,
-          },
-        })
-
-        if (!parentComment) {
-          return NextResponse.json({ error: "Parent comment not found" }, { status: 404 })
-        }
-      }
-
       // Create comment
-      const comment = await prisma.comment.create({
+      const comment = await prisma.eventComment.create({
         data: {
           content,
-          author: {
-            connect: {
-              id: session.user.id,
-            },
-          },
-          event: {
-            connect: {
-              id: eventId,
-            },
-          },
-          parent: parentId
-            ? {
-                connect: {
-                  id: parentId,
-                },
-              }
-            : undefined,
-        },
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
+          userId: session.user.id,
+          eventId,
         },
       })
 
-      return NextResponse.json(comment)
+      // Get user information for the comment
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      })
+
+      return NextResponse.json({
+        ...comment,
+        author: user,
+      })
     } catch (error) {
       console.error("Error creating comment:", error)
       return NextResponse.json({ error: "Failed to create comment" }, { status: 500 })

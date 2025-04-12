@@ -396,7 +396,7 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
               />
             </div>
 
-            <div className="grid gap-2">
+            {/* <div className="grid gap-2">
               <Label htmlFor="maxAttendees">Maximum Attendees</Label>
               <Input
                 id="maxAttendees"
@@ -406,7 +406,7 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
                 min="1"
                 required
               />
-            </div>
+            </div> */}
 
             <div className="flex items-center space-x-2">
               <Switch id="exclusive" checked={isExclusive} onCheckedChange={setIsExclusive} />

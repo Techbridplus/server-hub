@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, Calendar, Clock, MapPin, Star, Camera, Video, Check } from "lucide-react"
+import { ArrowLeft, Calendar, Clock, MapPin, Star, Camera, Video, Check, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -15,21 +15,25 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { useParams } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
+import { useSession } from "next-auth/react"
+import { UploadButton } from "@/components/upload-button"
 
 export default function EventPage() {
   // Get route parameters using the useParams hook
   const params = useParams()
   const serverId = params.serverId as string
   const eventId = params.eventId as string
-  
+  const { data: session } = useSession()
+
   // State for event data
   const [event, setEvent] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
-  // State for RSVP
-  const [rsvpStatus, setRsvpStatus] = useState<"going" | "maybe" | "not-going" | null>(null)
-  const [showAllAttendees, setShowAllAttendees] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [isModerator, setIsModerator] = useState(false)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false)
+  const [showAllPhotos, setShowAllPhotos] = useState(false)
 
   // State for countdown timer
   const [timeRemaining, setTimeRemaining] = useState({
@@ -51,9 +55,8 @@ export default function EventPage() {
         }
         const data = await response.json()
         setEvent(data)
-        setRsvpStatus(data.userAttendance)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
+        setError(err instanceof Error ? err.message : "An error occurred")
         toast({
           title: "Error",
           description: "Failed to load event details",
@@ -126,34 +129,100 @@ export default function EventPage() {
     return () => clearInterval(interval)
   }, [event])
 
-  // Handle RSVP
-  const handleRSVP = async (status: "going" | "maybe" | "not-going") => {
+  // Fetch user role
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const response = await fetch(`/api/servers/${serverId}/role`)
+        if (!response.ok) throw new Error('Failed to fetch user role')
+        const data = await response.json()
+        setIsAdmin(data.role === "ADMIN")
+        setIsModerator(data.role === "MODERATOR")
+      } catch (err) {
+        console.error("Error fetching user role:", err)
+      }
+    }
+
+    if (session?.user) {
+      fetchUserRole()
+    }
+  }, [serverId, session])
+
+  const handlePhotoUpload = async (url: string) => {
     try {
-      const response = await fetch(`/api/servers/${serverId}/events/${eventId}/attend`, {
-        method: 'POST',
+      setIsUploadingPhoto(true)
+      const response = await fetch(`/api/servers/${serverId}/events/${eventId}/photos`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ url }),
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to update RSVP status')
-      }
+      if (!response.ok) throw new Error("Failed to upload photo")
 
-      setRsvpStatus(status)
+      const photo = await response.json()
+      setEvent((prev: any) => ({
+        ...prev,
+        photos: [photo, ...(prev.photos || [])],
+      }))
+
       toast({
         title: "Success",
-        description: `You are now ${status} this event`,
+        description: "Photo uploaded successfully",
       })
-    } catch (err) {
+    } catch (error) {
+      console.error("Error uploading photo:", error)
       toast({
         title: "Error",
-        description: "Failed to update RSVP status",
+        description: "Failed to upload photo",
         variant: "destructive",
       })
+    } finally {
+      setIsUploadingPhoto(false)
     }
   }
+
+  const handleVideoUpload = async (url: string) => {
+    try {
+      setIsUploadingVideo(true)
+      const response = await fetch(`/api/servers/${serverId}/events/${eventId}/videos`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          url,
+          title: "Event Video",
+          // thumbnail: url, // Using the same URL as thumbnail for now
+        }),
+      })
+
+      if (!response.ok) throw new Error("Failed to upload video")
+
+      const video = await response.json()
+      setEvent((prev: any) => ({
+        ...prev,
+        videos: [video, ...(prev.videos || [])],
+      }))
+
+      toast({
+        title: "Success",
+        description: "Video uploaded successfully",
+      })
+    } catch (error) {
+      console.error("Error uploading video:", error)
+      toast({
+        title: "Error",
+        description: "Failed to upload video",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploadingVideo(false)
+    }
+  }
+
+  console.log("Event data:", event)
 
   if (loading) {
     return (
@@ -241,7 +310,7 @@ export default function EventPage() {
                   <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
                     <span>
-                      {new Date(event.startDate).toLocaleTimeString()} - 
+                      {new Date(event.startDate).toLocaleTimeString()} -
                       {event.endDate ? new Date(event.endDate).toLocaleTimeString() : 'End time not specified'}
                     </span>
                   </div>
@@ -308,7 +377,7 @@ export default function EventPage() {
                 <Separator className="my-6" />
 
                 {/* RSVP section */}
-                {!timeRemaining.isPast && (
+                {/* {!timeRemaining.isPast && (
                   <div className="mb-6">
                     <h2 className="mb-4 text-lg font-semibold">RSVP</h2>
                     <div className="flex flex-wrap gap-2">
@@ -333,10 +402,10 @@ export default function EventPage() {
                       </Button>
                     </div>
                   </div>
-                )}
+                )} */}
 
                 {/* Attendees section */}
-                <div className="mb-6">
+                {/* <div className="mb-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">Attendees</h2>
                     <Button
@@ -363,16 +432,156 @@ export default function EventPage() {
                         </div>
                       ))}
                   </div>
-                </div>
+                </div> */}
+                {/* Photos and videos section (only for past events) */}
+                {timeRemaining.isPast && (
+                  <div className="mt-6 rounded-lg border bg-card">
+                    <div className="p-6">
+                      <h2 className="mb-4 text-xl font-semibold">Event Memories</h2>
+
+                      <Tabs defaultValue="photos">
+                        <TabsList className="mb-4">
+                          <TabsTrigger value="photos" className="flex items-center gap-1">
+                            <Camera className="h-4 w-4" />
+                            Photos ({event.photos.length})
+                          </TabsTrigger>
+                          <TabsTrigger value="videos" className="flex items-center gap-1">
+                            <Video className="h-4 w-4" />
+                            Videos ({event.videos.length})
+                          </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="photos">
+                          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                            {(isAdmin || isModerator) && (
+                              <div className="relative aspect-square overflow-hidden rounded-md border-2 border-dashed">
+                                <UploadButton
+                                  type="image"
+                                  onUpload={handlePhotoUpload}
+                                  className="flex h-full w-full flex-col items-center justify-center gap-2"
+                                  disabled={isUploadingPhoto}
+                                />
+                                <p className="absolute bottom-2 left-2 right-2 text-center text-xs text-muted-foreground">
+                                  {isUploadingPhoto ? "Uploading..." : "Upload Photo"}
+                                </p>
+                              </div>
+                            )}
+                            {event.photos.slice(0, showAllPhotos ? undefined : 5).map((photo: any) => (
+                              <Dialog key={photo.id}>
+                                <DialogTrigger asChild>
+                                  <div className="relative aspect-square cursor-pointer overflow-hidden rounded-md">
+                                    <Image
+                                      src={photo.url || "/placeholder.svg"}
+                                      alt="Event photo"
+                                      fill
+                                      className="object-cover transition-transform hover:scale-105"
+                                    />
+                                  </div>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-3xl">
+                                  <div className="relative aspect-video w-full">
+                                    <Image
+                                      src={photo.url || "/placeholder.svg"}
+                                      alt="Event photo"
+                                      fill
+                                      className="object-contain"
+                                    />
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            ))}
+                          </div>
+                          
+                          {event.photos.length > 5 && (
+                            <div className="mt-4 flex justify-center">
+                              <Button 
+                                variant="outline" 
+                                onClick={() => setShowAllPhotos(!showAllPhotos)}
+                              >
+                                {showAllPhotos ? "Show Less" : `Load More (${event.photos.length - 5} more)`}
+                              </Button>
+                            </div>
+                          )}
+                        </TabsContent>
+
+                        <TabsContent value="videos">
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            {(isAdmin || isModerator) && (
+                              <div className="relative aspect-video overflow-hidden rounded-md border-2 border-dashed">
+                                <UploadButton
+                                  type="video"
+                                  onUpload={handleVideoUpload}
+                                  className="flex h-full w-full flex-col items-center justify-center gap-2"
+                                  disabled={isUploadingVideo}
+                                />
+                                <p className="absolute bottom-2 left-2 right-2 text-center text-xs text-muted-foreground">
+                                  {isUploadingVideo ? "Uploading..." : "Upload Video"}
+                                </p>
+                              </div>
+                            )}
+                            {event.videos.map((video: any) => (
+                              <Dialog key={video.id}>
+                                <DialogTrigger asChild>
+                                  <div className="relative aspect-video cursor-pointer overflow-hidden rounded-md">
+                                    <Image
+                                      src={video.thumbnail || "/placeholder.svg"}
+                                      alt="Video thumbnail"
+                                      fill
+                                      className="object-cover transition-transform hover:scale-105"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                      <div className="rounded-full bg-white/80 p-3">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          viewBox="0 0 24 24"
+                                          fill="currentColor"
+                                          className="h-6 w-6 text-primary"
+                                        >
+                                          <path d="M8 5v14l11-7z" />
+                                        </svg>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-3xl">
+                                  <div className="relative aspect-video w-full">
+                                    <Image
+                                      src={video.thumbnail || "/placeholder.svg"}
+                                      alt="Video thumbnail"
+                                      fill
+                                      className="object-cover"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                      <div className="rounded-full bg-white/80 p-3">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          viewBox="0 0 24 24"
+                                          fill="currentColor"
+                                          className="h-6 w-6 text-primary"
+                                        >
+                                          <path d="M8 5v14l11-7z" />
+                                        </svg>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            ))}
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                  </div>
+                )}
 
                 {/* Comments section */}
-                <div className="mb-6">
+                {/* <div className="mb-6">
                   <h2 className="mb-4 text-lg font-semibold">Comments</h2>
                   <CommentSection
                     resourceId={eventId}
                     resourceType="event"
                   />
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

@@ -3,11 +3,12 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { isServerAdmin, authMiddlewareAppRouter } from "@/lib/auth"
+import { use } from "react"
 
 // GET /api/servers/[serverId]/events/[eventId] - Get event details
 export async function GET(
   request: NextRequest,
-  params : Promise<{serverId: string, eventId: string}>
+  { params }: { params: { serverId: string; eventId: string } }
 ) {
   return authMiddlewareAppRouter(request, async (req, session, prisma) => {
     try {
@@ -20,11 +21,6 @@ export async function GET(
         },
         include: {
           server: true,
-          attendees: {
-            include: {
-              user: true
-            }
-          },
           photos: true,
           videos: true,
           comments: true
@@ -38,7 +34,32 @@ export async function GET(
         );
       }
 
-      return NextResponse.json(event);
+      const userData = await prisma.user.findUnique({
+        where: {
+          id: event.userId,
+        },
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        }
+      });
+      if (!userData) {
+        return NextResponse.json(
+          { error: "User not found" },
+          { status: 404 }
+        );
+      }
+      const eventWithUser = {
+        ...event,
+        organizer:{
+          id: userData.id,
+          name: userData.name,
+          image: userData.image,
+        }
+      }
+
+      return NextResponse.json(eventWithUser);
     } catch (error) {
       console.error("Error fetching event:", error);
       return NextResponse.json(

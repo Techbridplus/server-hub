@@ -44,7 +44,6 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
         // },
         _count: {
           select: {
-            attendees: true,
             photos: true,
             videos: true,
           },
@@ -144,6 +143,7 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
           imageUrl,
           isExclusive,
           serverId,
+          userId : userId,
         },
       })
 

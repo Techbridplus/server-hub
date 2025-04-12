@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Copy, Facebook, Link, Share, Twitter } from "lucide-react"
+import { Check, Copy, Facebook, Instagram, Link, Linkedin, Share, Twitter } from "lucide-react"
+import { FaTelegram } from "react-icons/fa6";
+import { BsWhatsapp } from "react-icons/bs";
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -25,7 +27,7 @@ export function ShareDialog({ title, url, type }: ShareDialogProps) {
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(false)
 
-  const fullUrl = `https://server-hub.vercel.app${url}`
+  const fullUrl = `${url}`
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(fullUrl)
@@ -36,6 +38,10 @@ export function ShareDialog({ title, url, type }: ShareDialogProps) {
   const socialShareLinks = {
     twitter: `https://twitter.com/intent/tweet?text=Check out this ${type}: ${title}&url=${encodeURIComponent(fullUrl)}`,
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(`Check out this ${type}: ${title}\n${fullUrl}`)}`, // Ensure proper formatting
+    telegram: `https://t.me/share/url?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(`Check out this ${type}: ${title}`)}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(fullUrl)}`,
+    instagram: `https://www.instagram.com/`, // Instagram does not support direct sharing via URL
   }
 
   return (
@@ -76,6 +82,17 @@ export function ShareDialog({ title, url, type }: ShareDialogProps) {
               </Button>
             </div>
 
+            <div className="text-center">
+              <a
+                href={fullUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary underline hover:text-primary/80"
+              >
+                Open Link
+              </a>
+            </div>
+
             <div className="rounded-md border p-4">
               <div className="mb-2 text-sm font-medium">Preview</div>
               <div className="flex items-start gap-3">
@@ -93,7 +110,7 @@ export function ShareDialog({ title, url, type }: ShareDialogProps) {
           </TabsContent>
 
           <TabsContent value="social" className="mt-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <a
                 href={socialShareLinks.twitter}
                 target="_blank"
@@ -111,6 +128,42 @@ export function ShareDialog({ title, url, type }: ShareDialogProps) {
               >
                 <Facebook className="mb-2 h-6 w-6 text-[#1877F2]" />
                 <span className="text-sm font-medium">Facebook</span>
+              </a>
+              <a
+                href={socialShareLinks.whatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center rounded-lg border p-4 transition-colors hover:bg-muted"
+              >
+                <BsWhatsapp className="mb-2 h-6 w-6 text-[#25D366]" />
+                <span className="text-sm font-medium">WhatsApp</span>
+              </a>
+              <a
+                href={socialShareLinks.telegram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center rounded-lg border p-4 transition-colors hover:bg-muted"
+              >
+                <FaTelegram className="mb-2 h-6 w-6 text-[#0088CC]"  />
+                <span className="text-sm font-medium">Telegram</span>
+              </a>
+              <a
+                href={socialShareLinks.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center rounded-lg border p-4 transition-colors hover:bg-muted"
+              >
+                <Linkedin className="mb-2 h-6 w-6 text-[#0077B5]" />
+                <span className="text-sm font-medium">LinkedIn</span>
+              </a>
+              <a
+                href={socialShareLinks.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center rounded-lg border p-4 transition-colors hover:bg-muted"
+              >
+                <Instagram className="mb-2 h-6 w-6 text-[#E4405F]" />
+                <span className="text-sm font-medium">Instagram</span>
               </a>
             </div>
 

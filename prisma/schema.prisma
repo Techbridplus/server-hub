@@ -25,7 +25,6 @@ model User {
   groupMembers  GroupMember[]
   savedServers  SavedServer[]
   twoFactorAuth TwoFactorAuth?
-  eventAttendees EventAttendee[]
   scheduledDeletions ScheduledDeletion[]
   sentMessages     DirectMessage[] @relation("SentMessages")
   receivedMessages DirectMessage[] @relation("ReceivedMessages")
@@ -155,24 +154,15 @@ model Event {
   isExclusive Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  userId      String   @db.ObjectId
+
 
   server    Server        @relation(fields: [serverId], references: [id])
-  attendees EventAttendee[]
   photos    EventPhoto[]
   videos    EventVideo[]
   comments  EventComment[]
 }
 
-model EventAttendee {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId   String   @db.ObjectId
-  eventId  String   @db.ObjectId
-  status   String   @default("going") // going, maybe, not_going
-  addedAt  DateTime @default(now())
-
-  user  User  @relation(fields: [userId], references: [id])
-  event Event @relation(fields: [eventId], references: [id])
-}
 
 model EventPhoto {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -191,6 +181,7 @@ model EventVideo {
   caption     String?
   uploadedBy  String
   eventId     String   @db.ObjectId
+  thumbnail   String?
   uploadedAt  DateTime @default(now())
 
   event Event @relation(fields: [eventId], references: [id])
