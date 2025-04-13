@@ -97,7 +97,7 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
           data: {
             userId,
             groupId: newGroup.id,
-            role: MemberRole.ADMIN,
+            role: serverMember.role,
           },
         })
 

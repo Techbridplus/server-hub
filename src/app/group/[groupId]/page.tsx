@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useParams, useSearchParams } from "next/navigation"
+import { useParams, useSearchParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useSocket } from "@/hooks/use-socket"
 import { useToast } from "@/hooks/use-toast"
@@ -17,7 +17,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { 
   Users, 
   Hash, 
-  Volume2, 
   Video, 
   Phone, 
   Settings, 
@@ -34,10 +33,7 @@ import {
   ArrowLeft,
   Bell,
   BellOff,
-  Mic,
-  MicOff,
-  Headphones,
-  HeadphoneOff
+  MessageSquare
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ChatInterface } from "@/components/chat-interface"
@@ -58,6 +54,7 @@ export default function GroupPage() {
   const groupId = params.groupId as string;
   const searchParams = useSearchParams()
   const channelId = searchParams.get("channel")
+  const router = useRouter()
   const { data: session } = useSession()
   const socket = useSocket()
   const { toast } = useToast()
@@ -65,12 +62,12 @@ export default function GroupPage() {
   const [group, setGroup] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("chat")
-  const [isMuted, setIsMuted] = useState(false)
-  const [isDeafened, setIsDeafened] = useState(false)
-  const [isInCall, setIsInCall] = useState(false)
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isVideoCallOpen, setIsVideoCallOpen] = useState(false)
+  const [isDirectMessageOpen, setIsDirectMessageOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<any>(null)
+  const [directMessages, setDirectMessages] = useState<any[]>([])
+  const [newMessage, setNewMessage] = useState("")
   
   // Fetch group data
   useEffect(() => {
@@ -80,17 +77,29 @@ export default function GroupPage() {
         if (!response.ok) throw new Error("Failed to fetch group data")
         
         const data = await response.json()
+        
+        // Ensure the server creator is included in the members list with admin role
+        if (data.creatorId && !data.members.some((member: any) => member.userId === data.creatorId)) {
+          // Fetch creator user data
+          const creatorResponse = await fetch(`/api/users/${data.creatorId}`)
+          if (creatorResponse.ok) {
+            const creatorData = await creatorResponse.json()
+            data.members.push({
+              id: `creator-${data.creatorId}`,
+              userId: data.creatorId,
+              role: "admin",
+              user: creatorData
+            })
+          }
+        }
+        
         setGroup(data)
         
         // If no channel is selected, select the first text channel
         if (!channelId && data.channels && data.channels.length > 0) {
           const firstTextChannel = data.channels.find((channel: any) => channel.type === "text")
           if (firstTextChannel) {
-            window.history.pushState(
-              {}, 
-              "", 
-              `/group/${groupId}?channel=${firstTextChannel.id}`
-            )
+            router.push(`/group/${groupId}?channel=${firstTextChannel.id}`)
           }
         }
       } catch (error) {
@@ -106,41 +115,70 @@ export default function GroupPage() {
     }
     
     fetchGroupData()
-  }, [groupId, channelId, toast])
+  }, [groupId, channelId, toast, router])
   
-  // Handle voice channel join
-  const handleJoinVoiceChannel = (channelId: string) => {
-    setIsInCall(true)
-    toast({
-      title: "Joined Voice Channel",
-      description: "You are now connected to the voice channel.",
+  // Handle direct message
+  const handleDirectMessage = (user: any) => {
+    setSelectedUser(user)
+    setIsDirectMessageOpen(true)
+    // Fetch direct messages between current user and selected user
+    fetchDirectMessages(user.userId)
+  }
+  
+  // Fetch direct messages
+  const fetchDirectMessages = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/messages/direct?userId=${userId}`)
+      if (!response.ok) throw new Error("Failed to fetch direct messages")
+      
+      const data = await response.json()
+      setDirectMessages(data)
+    } catch (error) {
+      console.error("Error fetching direct messages:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load messages. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+  
+  // Send direct message
+  const sendDirectMessage = () => {
+    if (!newMessage.trim() || !selectedUser) return
+    
+    const message = {
+      id: Date.now().toString(),
+      content: newMessage,
+      senderId: session?.user?.id,
+      receiverId: selectedUser.userId,
+      createdAt: new Date().toISOString()
+    }
+    
+    // Emit the message through socket
+    socket?.emit("directMessage", message)
+    
+    // Add message to local state
+    setDirectMessages([...directMessages, message])
+    setNewMessage("")
+  }
+  
+  // Listen for incoming direct messages
+  useEffect(() => {
+    if (!socket) return
+    
+    socket.on("directMessage", (message: any) => {
+      if (isDirectMessageOpen && 
+          ((message.senderId === selectedUser?.userId && message.receiverId === session?.user?.id) || 
+           (message.senderId === session?.user?.id && message.receiverId === selectedUser?.userId))) {
+        setDirectMessages(prev => [...prev, message])
+      }
     })
     
-    // In a real app, you would connect to a WebRTC service here
-  }
-  
-  // Handle video call
-  const handleStartVideoCall = () => {
-    setIsVideoCallOpen(true)
-  }
-  
-  // Toggle mute
-  const toggleMute = () => {
-    setIsMuted(!isMuted)
-    toast({
-      title: isMuted ? "Unmuted" : "Muted",
-      description: isMuted ? "Your microphone is now active." : "Your microphone is now muted.",
-    })
-  }
-  
-  // Toggle deafen
-  const toggleDeafen = () => {
-    setIsDeafened(!isDeafened)
-    toast({
-      title: isDeafened ? "Undeafened" : "Deafened",
-      description: isDeafened ? "You can now hear audio." : "You are now deafened.",
-    })
-  }
+    return () => {
+      socket.off("directMessage")
+    }
+  }, [socket, isDirectMessageOpen, selectedUser, session?.user?.id])
   
   // Toggle notifications
   const toggleNotifications = () => {
@@ -177,10 +215,9 @@ export default function GroupPage() {
   
   // Group channels by type
   const textChannels = group.channels?.filter((channel: any) => channel.type === "text") || []
-  const voiceChannels = group.channels?.filter((channel: any) => channel.type === "voice") || []
   
   // Check if user is admin or moderator
-  const isAdmin = group.members?.some((member: any) => 
+  const isAdmin = group?.creatorId === session?.user?.id || group?.members?.some((member: any) => 
     member.userId === session?.user?.id && (member.role === "admin" || member.role === "moderator")
   )
   
@@ -231,11 +268,7 @@ export default function GroupPage() {
                         channelId === channel.id && "bg-accent",
                       )}
                       onClick={() => {
-                        window.history.pushState(
-                          {}, 
-                          "", 
-                          `/group/${groupId}?channel=${channel.id}`
-                        )
+                        router.push(`/group/${groupId}?channel=${channel.id}`)
                         setIsMobileMenuOpen(false)
                       }}
                     >
@@ -244,48 +277,18 @@ export default function GroupPage() {
                     </button>
                   ))}
                 </div>
-                <div className="mb-2">
-                  <div className="flex items-center justify-between px-2 py-1">
-                    <h3 className="text-xs font-semibold uppercase text-muted-foreground">Voice Channels</h3>
-                  </div>
-                  {voiceChannels.map((channel: any) => (
-                    <button
-                      key={channel.id}
-                      className={cn(
-                        "flex w-full items-center gap-x-2 rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-accent",
-                        isInCall && "bg-accent",
-                      )}
-                      onClick={() => handleJoinVoiceChannel(channel.id)}
-                    >
-                      <Volume2 className="h-4 w-4" />
-                      <span>{channel.name}</span>
-                    </button>
-                  ))}
-                </div>
               </div>
             </ScrollArea>
             <Separator />
             <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-x-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={session?.user?.image || undefined} />
-                    <AvatarFallback>{session?.user?.name?.charAt(0) || "U"}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-medium">{session?.user?.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {isMuted ? "Muted" : isDeafened ? "Deafened" : "Online"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-x-1">
-                  <Button variant="ghost" size="icon" onClick={toggleMute}>
-                    {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={toggleDeafen}>
-                    {isDeafened ? <HeadphoneOff className="h-4 w-4" /> : <Headphones className="h-4 w-4" />}
-                  </Button>
+              <div className="flex items-center gap-x-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={session?.user?.image || undefined} />
+                  <AvatarFallback>{session?.user?.name?.charAt(0) || "U"}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-medium">{session?.user?.name}</p>
+                  <p className="text-xs text-muted-foreground">Online</p>
                 </div>
               </div>
             </div>
@@ -340,32 +343,10 @@ export default function GroupPage() {
                     channelId === channel.id && "bg-accent",
                   )}
                   onClick={() => {
-                    window.history.pushState(
-                      {}, 
-                      "", 
-                      `/group/${groupId}?channel=${channel.id}`
-                    )
+                    router.push(`/group/${groupId}?channel=${channel.id}`)
                   }}
                 >
                   <Hash className="h-4 w-4" />
-                  <span>{channel.name}</span>
-                </button>
-              ))}
-            </div>
-            <div className="mb-2">
-              <div className="flex items-center justify-between px-2 py-1">
-                <h3 className="text-xs font-semibold uppercase text-muted-foreground">Voice Channels</h3>
-              </div>
-              {voiceChannels.map((channel: any) => (
-                <button
-                  key={channel.id}
-                  className={cn(
-                    "flex w-full items-center gap-x-2 rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-accent",
-                    isInCall && "bg-accent",
-                  )}
-                  onClick={() => handleJoinVoiceChannel(channel.id)}
-                >
-                  <Volume2 className="h-4 w-4" />
                   <span>{channel.name}</span>
                 </button>
               ))}
@@ -374,26 +355,14 @@ export default function GroupPage() {
         </ScrollArea>
         <Separator />
         <div className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-x-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={session?.user?.image || undefined} />
-                <AvatarFallback>{session?.user?.name?.charAt(0) || "U"}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-medium">{session?.user?.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {isMuted ? "Muted" : isDeafened ? "Deafened" : "Online"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-x-1">
-              <Button variant="ghost" size="icon" onClick={toggleMute}>
-                {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </Button>
-              <Button variant="ghost" size="icon" onClick={toggleDeafen}>
-                {isDeafened ? <HeadphoneOff className="h-4 w-4" /> : <Headphones className="h-4 w-4" />}
-              </Button>
+          <div className="flex items-center gap-x-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={session?.user?.image || undefined} />
+              <AvatarFallback>{session?.user?.name?.charAt(0) || "U"}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-medium">{session?.user?.name}</p>
+              <p className="text-xs text-muted-foreground">Online</p>
             </div>
           </div>
         </div>
@@ -423,12 +392,6 @@ export default function GroupPage() {
             <Button variant="ghost" size="icon" onClick={() => document.getElementById("add-channel-trigger")?.click()}>
               <PlusCircle className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleStartVideoCall}>
-              <Video className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Phone className="h-5 w-5" />
-            </Button>
             <Button variant="ghost" size="icon">
               <Settings className="h-5 w-5" />
             </Button>
@@ -455,6 +418,151 @@ export default function GroupPage() {
         </div>
       </div>
       
+      {/* Right sidebar - Members */}
+      <div className="hidden w-60 flex-col border-l bg-muted/40 md:flex">
+        <div className="p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Members</h3>
+            <span className="text-xs text-muted-foreground">{group.members?.length || 0}</span>
+          </div>
+        </div>
+        <Separator />
+        <ScrollArea className="flex-1">
+          <div className="p-2">
+            {/* Admin members */}
+            <div className="mb-2">
+              <div className="px-2 py-1">
+                <h3 className="text-xs font-semibold uppercase text-muted-foreground">Admin</h3>
+              </div>
+              {group.members?.filter((member: any) => member.role === "admin" || member.userId === group.creatorId).map((member: any) => (
+                <button
+                  key={member.id}
+                  className="flex w-full items-center gap-x-2 rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-accent"
+                  onClick={() => handleDirectMessage(member)}
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={member.user?.image || undefined} />
+                    <AvatarFallback>{member.user?.name?.charAt(0) || "U"}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-1 items-center justify-between">
+                    <span>{member.user?.name}</span>
+                    <Badge variant="outline" className="text-xs">Admin</Badge>
+                  </div>
+                </button>
+              ))}
+            </div>
+            
+            {/* Moderator members */}
+            <div className="mb-2">
+              <div className="px-2 py-1">
+                <h3 className="text-xs font-semibold uppercase text-muted-foreground">Moderator</h3>
+              </div>
+              {group.members?.filter((member: any) => member.role === "moderator" && member.userId !== group.creatorId).map((member: any) => (
+                <button
+                  key={member.id}
+                  className="flex w-full items-center gap-x-2 rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-accent"
+                  onClick={() => handleDirectMessage(member)}
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={member.user?.image || undefined} />
+                    <AvatarFallback>{member.user?.name?.charAt(0) || "U"}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-1 items-center justify-between">
+                    <span>{member.user?.name}</span>
+                    <Badge variant="outline" className="text-xs">Mod</Badge>
+                  </div>
+                </button>
+              ))}
+            </div>
+            
+            {/* Regular members */}
+            <div className="mb-2">
+              <div className="px-2 py-1">
+                <h3 className="text-xs font-semibold uppercase text-muted-foreground">Members</h3>
+              </div>
+              {group.members?.filter((member: any) => member.role === "member" && member.userId !== group.creatorId).map((member: any) => (
+                <button
+                  key={member.id}
+                  className="flex w-full items-center gap-x-2 rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-accent"
+                  onClick={() => handleDirectMessage(member)}
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={member.user?.image || undefined} />
+                    <AvatarFallback>{member.user?.name?.charAt(0) || "U"}</AvatarFallback>
+                  </Avatar>
+                  <span>{member.user?.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </ScrollArea>
+      </div>
+      
+      {/* Direct Message Dialog */}
+      <Sheet open={isDirectMessageOpen} onOpenChange={setIsDirectMessageOpen}>
+        <SheetContent side="right" className="w-[400px] p-0">
+          <div className="flex h-full flex-col">
+            <div className="flex items-center justify-between border-b p-4">
+              <div className="flex items-center gap-x-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={selectedUser?.user?.image || undefined} />
+                  <AvatarFallback>{selectedUser?.user?.name?.charAt(0) || "U"}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{selectedUser?.user?.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedUser?.role === "admin" ? "Admin" : selectedUser?.role === "moderator" ? "Moderator" : "Member"}
+                  </p>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setIsDirectMessageOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <ScrollArea className="flex-1 p-4">
+              <div className="flex flex-col gap-y-4">
+                {directMessages.map((message) => (
+                  <div 
+                    key={message.id}
+                    className={cn(
+                      "flex max-w-[80%] flex-col gap-y-1 rounded-md p-2",
+                      message.senderId === session?.user?.id 
+                        ? "ml-auto bg-primary text-primary-foreground" 
+                        : "bg-muted"
+                    )}
+                  >
+                    <p className="text-sm">{message.content}</p>
+                    <p className="text-xs opacity-70">
+                      {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            
+            <div className="border-t p-4">
+              <div className="flex items-center gap-x-2">
+                <Input
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault()
+                      sendDirectMessage()
+                    }
+                  }}
+                />
+                <Button size="icon" onClick={sendDirectMessage}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+      
       {/* Dialogs */}
       <AddChannelDialog groupId={groupId} serverId={group.serverId} />
       <ManageGroupMembersDialog 
@@ -463,17 +571,6 @@ export default function GroupPage() {
         members={group.members || []} 
         isOwner={isAdmin} 
       />
-      
-      {/* Video Call Dialog */}
-      {channelId && (
-        <VideoCallDialog
-          isOpen={isVideoCallOpen}
-          onClose={() => setIsVideoCallOpen(false)}
-          channelId={channelId}
-          userId={session?.user?.id || ""}
-          username={session?.user?.name || "User"}
-        />
-      )}
     </div>
   )
 } 

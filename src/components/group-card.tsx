@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Users, MoreHorizontal, Edit, Trash } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Users, MoreHorizontal, Edit, Trash, UserPlus, UserMinus } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
   Dialog,
@@ -25,19 +24,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Group } from "@prisma/client"
+import { Group, GroupMember } from "@prisma/client"
+import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 
 interface GroupCardProps {
   group: Group & {
     _count?: {
       members: number;
     };
+    members?: GroupMember[];
   };
   serverId: string;
   canEdit?: boolean;
@@ -46,36 +48,249 @@ interface GroupCardProps {
 export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const { toast } = useToast()
+  const router = useRouter()
+  const { data: session } = useSession()
+  const currentUserId = session?.user?.id
 
   // Edit form state
   const [editName, setEditName] = useState(group.name)
   const [editDescription, setEditDescription] = useState(group.description || "")
-  const [isPrivate, setIsPrivate] = useState(false)
+  const [isPrivate, setIsPrivate] = useState(group.isPrivate || false)
   const [isEditing, setIsEditing] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isJoining, setIsJoining] = useState(false)
+  const [isLeaving, setIsLeaving] = useState(false)
+  const [isServerMember, setIsServerMember] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const handleEdit = () => {
+  // Check if user is already a member
+  const isMember = currentUserId && group.members?.some(member => member.userId === currentUserId)
+
+  // Check if user is an admin or moderator
+  const isAdminOrModerator = group.members?.some(
+    (member) => member.userId === currentUserId && (member.role === "ADMIN" || member.role === "MODERATOR")
+  )
+
+  // Check if user is a member of the server
+  useEffect(() => {
+    const checkServerMembership = async () => {
+      if (!currentUserId) {
+        setIsLoading(false)
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/servers/${serverId}/members`, {
+          method: "POST",
+          body: JSON.stringify({ userId: currentUserId, serverId }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+        if (response.ok) {
+          setIsServerMember(true)
+        }
+      } catch (error) {
+        console.error("Error checking server membership:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkServerMembership()
+  }, [currentUserId, serverId])
+
+  const handleEdit = async () => {
+    if (!editName.trim()) {
+      toast({
+        title: "Error",
+        description: "Group name cannot be empty",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsEditing(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsEditing(false)
+    try {
+      const response = await fetch(`/api/groups/${group.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: editName,
+          description: editDescription,
+          isPrivate,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update group")
+      }
+
+      const updatedGroup = await response.json()
+      
+      // Update local state
+      group.name = updatedGroup.name
+      group.description = updatedGroup.description
+      group.isPrivate = updatedGroup.isPrivate
+
+      toast({
+        title: "Success",
+        description: "Group updated successfully",
+      })
+      
       setShowEditDialog(false)
-
-      // In a real app, you would update the group in the database
-      // For now, we'll just update the local state
-      group.name = editName
-      group.description = editDescription
-
-      // Show success message
-      alert("Group updated successfully!")
-    }, 1000)
+      router.refresh() // Refresh the page to show updated data
+    } catch (error) {
+      console.error("Error updating group:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update group. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsEditing(false)
+    }
   }
 
-  const handleDelete = () => {
-    // In a real app, you would delete the group from the database
-    // For now, we'll just show a success message
-    alert("Group deleted successfully!")
-    setShowDeleteDialog(false)
+  const handleDelete = async () => {
+    setIsDeleting(true)
+
+    try {
+      const response = await fetch(`/api/groups/${group.id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete group")
+      }
+
+      toast({
+        title: "Success",
+        description: "Group deleted successfully",
+      })
+      
+      setShowDeleteDialog(false)
+      router.refresh() // Refresh the page to show updated data
+    } catch (error) {
+      console.error("Error deleting group:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete group. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleJoin = async () => {
+    if (!currentUserId) {
+      toast({
+        title: "Error",
+        description: "You need to be logged in to join a group",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!isServerMember) {
+      toast({
+        title: "Error",
+        description: "You need to be a member of the server to join this group",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsJoining(true)
+
+    try {
+      const response = await fetch(`/api/groups/${group.id}/join`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          serverId,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to join group")
+      }
+
+      const data = await response.json()
+      
+      toast({
+        title: "Success",
+        description: data.message || "You have joined the group successfully",
+      })
+      
+      // Update local state to reflect membership
+      if (group.members) {
+        group.members.push({
+          id: data.member.id,
+          userId: currentUserId,
+          groupId: group.id,
+          role: "MEMBER",
+          joinedAt: new Date(),
+        })
+      }
+      
+      router.refresh() // Refresh the page to show updated data
+    } catch (error) {
+      console.error("Error joining group:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to join group. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsJoining(false)
+    }
+  }
+
+  const handleLeave = async () => {
+    if (!currentUserId) return
+
+    setIsLeaving(true)
+
+    try {
+      const response = await fetch(`/api/groups/${group.id}/leave`, {
+        method: "POST",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to leave group")
+      }
+
+      toast({
+        title: "Success",
+        description: "You have left the group successfully",
+      })
+      
+      // Update local state to reflect leaving
+      if (group.members) {
+        group.members = group.members.filter(member => member.userId !== currentUserId)
+      }
+      
+      router.refresh() // Refresh the page to show updated data
+    } catch (error) {
+      console.error("Error leaving group:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to leave group. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLeaving(false)
+    }
   }
 
   return (
@@ -104,18 +319,14 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DialogTrigger asChild onClick={() => setShowEditDialog(true)}>
-                  <DropdownMenuItem>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                </DialogTrigger>
-                <AlertDialogTrigger asChild onClick={() => setShowDeleteDialog(true)}>
-                  <DropdownMenuItem className="text-destructive focus:text-destructive">
-                    <Trash className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
+                <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setShowDeleteDialog(true)}>
+                  <Trash className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -124,12 +335,50 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
       <CardContent className="pb-2">
         <p className="text-sm text-muted-foreground">{group.description}</p>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col gap-2">
         <Link href={`/group/${group.id}?serverId=${serverId}`} className="w-full">
           <Button variant="outline" className="w-full">
             View Group
           </Button>
         </Link>
+        
+        {!isLoading && !isAdminOrModerator && (
+          <>
+            {isMember ? (
+              <Button 
+                variant="destructive" 
+                className="w-full" 
+                onClick={handleLeave}
+                disabled={isLeaving}
+              >
+                <UserMinus className="mr-2 h-4 w-4" />
+                {isLeaving ? "Leaving..." : "Leave Group"}
+              </Button>
+            ) : !group.isPrivate && isServerMember ? (
+              <Button 
+                variant="default" 
+                className="w-full" 
+                onClick={handleJoin}
+                disabled={isJoining}
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                {isJoining ? "Joining..." : "Join Group"}
+              </Button>
+            ) : group.isPrivate && isServerMember ? (
+              <Button variant="secondary" className="w-full" disabled>
+                Private Group (Invitation Only)
+              </Button>
+            ) : !isServerMember ? (
+              <Button variant="secondary" className="w-full" disabled>
+                Join Server First
+              </Button>
+            ) : (
+              <Button variant="secondary" className="w-full" disabled>
+                Login to Join
+              </Button>
+            )}
+          </>
+        )}
       </CardFooter>
 
       {/* Edit Dialog */}
@@ -195,8 +444,9 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
             >
-              Delete
+              {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -62,4 +62,39 @@ export async function GET(
     )
   }
 }
+// POST /api/servers/[serverId]/members - Check if a user is a member of the server
+
+export async function POST(req: Request) {
+  try {
+    const { userId, serverId } = await req.json();
+
+    // Validate input
+    if (!userId || !serverId) {
+      return NextResponse.json(
+        { success: false, error: "Missing userId or serverId" },
+        { status: 400 }
+      );
+    }
+
+    // Check if the user is a member of the server
+    const serverMember = await prisma.serverMember.findFirst({
+      where: {
+        userId,
+        serverId,
+      },
+    });
+
+    if (serverMember) {
+      return NextResponse.json({ success: true, isMember: true });
+    } else {
+      return NextResponse.json({ success: true, isMember: false });
+    }
+  } catch (error) {
+    console.error("Error checking server membership:", error);
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
 
