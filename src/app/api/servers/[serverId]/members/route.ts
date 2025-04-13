@@ -81,7 +81,7 @@ export async function POST(req: Request) {
       where: {
         userId,
         serverId,
-      },
+      }
     });
 
     if (serverMember) {

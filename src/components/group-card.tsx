@@ -33,6 +33,7 @@ import { Group, GroupMember } from "@prisma/client"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
+import axios from "axios"
 
 interface GroupCardProps {
   group: Group & {
@@ -68,9 +69,7 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
   const isMember = currentUserId && group.members?.some(member => member.userId === currentUserId)
 
   // Check if user is an admin or moderator
-  const isAdminOrModerator = group.members?.some(
-    (member) => member.userId === currentUserId && (member.role === "ADMIN" || member.role === "MODERATOR")
-  )
+  const [isAdminOrModerator, setIsAdminOrModerator] = useState(false) 
 
   // Check if user is a member of the server
   useEffect(() => {
@@ -81,25 +80,31 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
       }
 
       try {
-        const response = await fetch(`/api/servers/${serverId}/members`, {
-          method: "POST",
-          body: JSON.stringify({ userId: currentUserId, serverId }),
-          headers: {
-            "Content-Type": "application/json",
+        const response = await axios.get(`/api/servers/${serverId}/membercheck`, {
+          params: {
+            groupId: group.id,
           },
         })
-        if (response.ok) {
-          setIsServerMember(true)
+
+        
+        if (response.status === 200) {
+          const data = await response.data
+          const userRole = data.role
+          setIsAdminOrModerator(userRole === "ADMIN" || userRole === "MODERATOR")
+          setIsServerMember(true);
+        } else {
+          const errorData = await response.status;
+          console.error("Error from API:", errorData);
         }
       } catch (error) {
-        console.error("Error checking server membership:", error)
+        console.error("Error checking server membership:", error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    checkServerMembership()
-  }, [currentUserId, serverId])
+    checkServerMembership();
+  }, [currentUserId, serverId, group.id]); // Ensure group.id is included in the dependency array
 
   const handleEdit = async () => {
     if (!editName.trim()) {
