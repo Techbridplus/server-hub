@@ -39,7 +39,7 @@ export async function GET(req: NextRequest, { params }: { params: { groupId: str
             });
 
             if (!groupMember) {
-                return NextResponse.json({ error: "User is not a member of this group" }, { status: 403 });
+                return NextResponse.json({groupMember: null}, { status: 404 });
             }
 
             return NextResponse.json(groupMember);

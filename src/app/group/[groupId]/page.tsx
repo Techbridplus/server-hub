@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { MemberRole } from "@prisma/client"
 import { 
   Users, 
   Hash, 
@@ -77,21 +78,7 @@ export default function GroupPage() {
         if (!response.ok) throw new Error("Failed to fetch group data")
         
         const data = await response.json()
-        
-        // Ensure the server creator is included in the members list with admin role
-        if (data.creatorId && !data.members.some((member: any) => member.userId === data.creatorId)) {
-          // Fetch creator user data
-          const creatorResponse = await fetch(`/api/users/${data.creatorId}`)
-          if (creatorResponse.ok) {
-            const creatorData = await creatorResponse.json()
-            data.members.push({
-              id: `creator-${data.creatorId}`,
-              userId: data.creatorId,
-              role: "admin",
-              user: creatorData
-            })
-          }
-        }
+        console.log("Group data:", data)
         
         setGroup(data)
         
@@ -217,9 +204,11 @@ export default function GroupPage() {
   const textChannels = group.channels?.filter((channel: any) => channel.type === "text") || []
   
   // Check if user is admin or moderator
-  const isAdmin = group?.creatorId === session?.user?.id || group?.members?.some((member: any) => 
-    member.userId === session?.user?.id && (member.role === "admin" || member.role === "moderator")
+  const isAdmin = group?.members?.some((member: any) => 
+    member.userId === session?.user?.id && (member.role === MemberRole.ADMIN || member.role === MemberRole.MODERATOR)
   )
+  console.log("Is admin:", isAdmin)
+
   
   return (
     <div className="flex h-screen flex-col md:flex-row">
@@ -249,7 +238,7 @@ export default function GroupPage() {
                 <div className="mb-2">
                   <div className="flex items-center justify-between px-2 py-1">
                     <h3 className="text-xs font-semibold uppercase text-muted-foreground">Text Channels</h3>
-                    {isAdmin && (
+                    {isAdmin  && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -324,7 +313,7 @@ export default function GroupPage() {
             <div className="mb-2">
               <div className="flex items-center justify-between px-2 py-1">
                 <h3 className="text-xs font-semibold uppercase text-muted-foreground">Text Channels</h3>
-                {isAdmin && (
+                {isAdmin  && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -389,9 +378,13 @@ export default function GroupPage() {
                 <Users className="h-5 w-5" />
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={() => document.getElementById("add-channel-trigger")?.click()}>
+
+            {isAdmin && (
+              <Button variant="ghost" size="icon" onClick={() => document.getElementById("add-channel-trigger")?.click()}>
               <PlusCircle className="h-5 w-5" />
             </Button>
+            )}
+            
             <Button variant="ghost" size="icon">
               <Settings className="h-5 w-5" />
             </Button>
@@ -407,6 +400,7 @@ export default function GroupPage() {
               isAdmin={isAdmin} 
               defaultChannelId={channelId} 
             />
+
           ) : (
             <div className="flex flex-1 items-center justify-center">
               <div className="text-center">
@@ -434,7 +428,7 @@ export default function GroupPage() {
               <div className="px-2 py-1">
                 <h3 className="text-xs font-semibold uppercase text-muted-foreground">Admin</h3>
               </div>
-              {group.members?.filter((member: any) => member.role === "admin" || member.userId === group.creatorId).map((member: any) => (
+              {group.members?.filter((member: any) => member.role === "ADMIN").map((member: any) => (
                 <button
                   key={member.id}
                   className="flex w-full items-center gap-x-2 rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-accent"
@@ -573,4 +567,4 @@ export default function GroupPage() {
       />
     </div>
   )
-} 
+}

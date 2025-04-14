@@ -37,8 +37,7 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
 export async function POST(req: NextRequest, { params }: { params: { serverId: string; groupId: string } }) {
   return authMiddlewareAppRouter(req, async (req, session, prisma) => {
     try {
-      const serverId = await Promise.resolve(params.serverId)
-      const groupId = await Promise.resolve(params.groupId)
+      const { serverId, groupId } = await params
 
       if (!serverId || !groupId) {
         return NextResponse.json({ error: "Server ID and Group ID are required" }, { status: 400 })

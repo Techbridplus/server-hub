@@ -67,6 +67,26 @@ export default function HomePage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const { ref, inView } = useInView()
 
+  const handleJoinServer = async (serverId: string) => {
+    try {
+      await axios.post(`/api/servers/${serverId}/join`)
+      toast({
+        title: "Success",
+        description: "You have successfully joined the server.",
+        variant: "default",
+      })
+      // Update joined servers list
+      setJoinedServers((prev) => [...prev, allServers.find((s) => s.id === serverId)!])
+    } catch (error) {
+      console.error("Error joining server:", error)
+      toast({
+        title: "Error",
+        description: "Failed to join the server. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
@@ -432,7 +452,7 @@ export default function HomePage() {
                     variant={activeCategory === category.name ? "default" : "outline"}
                     size="sm"
                     className="cursor-pointer whitespace-nowrap"
-                    // onClick={() => handleCategoryChange(category.name)}
+                    onClick={() => handleCategoryChange(category.name)}
                   >
                     {category.name}
                   </Button>
@@ -491,7 +511,7 @@ export default function HomePage() {
                         server={server}
                         isAdmin={myServers.some((s) => s.id === server.id)}
                         layout={layoutType}
-                        onJoin={() => {}}
+                        onJoin={() => handleJoinServer(server.id)}
                         isJoined={joinedServers.some((s) => s.id === server.id)}
                       />
                     ))}

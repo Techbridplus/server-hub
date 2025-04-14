@@ -6,7 +6,16 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
   return authMiddlewareAppRouter(req, async (req, session, prisma) => {
     try {
       const { serverId } = params
-      const { accessKey } = await req.json()
+      let accessKey: string | undefined
+
+      // Safely parse the request body
+      try {
+        const body = await req.json()
+        accessKey = body?.accessKey
+      } catch (error) {
+        // If parsing fails, assume no accessKey was provided
+        accessKey = undefined
+      }
 
       // Check if server exists
       const server = await prisma.server.findUnique({
@@ -24,12 +33,10 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
       }
 
       // Check if user is already a member
-      const existingMembership = await prisma.serverMember.findUnique({
+      const existingMembership = await prisma.serverMember.findFirst({
         where: {
-          userId_serverId: {
-            userId: session.user.id,
-            serverId,
-          },
+          userId: session.user.id,
+          serverId,
         },
       })
 
@@ -38,24 +45,21 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
       }
 
       // Check access key for private servers
-      if (server.isPrivate && server.accessKey !== accessKey) {
-        return NextResponse.json({ error: "Invalid access key" }, { status: 403 })
+      if (server.isPrivate) {
+        if (!accessKey) {
+          return NextResponse.json({ error: "Access key is required for private servers" }, { status: 403 })
+        }
+        if (server.accessKey !== accessKey) {
+          return NextResponse.json({ error: "Invalid access key" }, { status: 403 })
+        }
       }
 
       // Join server
       const membership = await prisma.serverMember.create({
         data: {
-          user: {
-            connect: {
-              id: session.user.id,
-            },
-          },
-          server: {
-            connect: {
-              id: serverId,
-            },
-          },
-          role: "member",
+          userId: session.user.id,
+          serverId,
+          role: "MEMBER",
         },
       })
 

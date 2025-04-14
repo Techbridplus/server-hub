@@ -92,8 +92,13 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
           const userRole = data.role
           setIsAdminOrModerator(userRole === "ADMIN" || userRole === "MODERATOR")
           setIsServerMember(true);
+        } else if (response.status === 404) {
+          // User is not a member of the server
+          setIsServerMember(false);
         } else {
-          const errorData = await response.status;
+          // Handle other response statuses
+          console.error("Unexpected response status:", response.status);
+          const errorData = await response.data
           console.error("Error from API:", errorData);
         }
       } catch (error) {
@@ -349,7 +354,7 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
         
         {!isLoading && !isAdminOrModerator && (
           <>
-            {isMember ? (
+            {isServerMember ? (
               <Button 
                 variant="destructive" 
                 className="w-full" 

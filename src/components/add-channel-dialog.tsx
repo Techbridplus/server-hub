@@ -135,16 +135,16 @@ export function AddChannelDialog({ groupId, serverId }: AddChannelDialogProps) {
                   <RadioGroupItem value="text" id="text" disabled={isLoading} />
                   <Label htmlFor="text">Text</Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                {/* <div className="flex items-center space-x-2">
                   <RadioGroupItem value="voice" id="voice" disabled={isLoading} />
                   <Label htmlFor="voice">Voice</Label>
-                </div>
+                </div> */}
               </RadioGroup>
             </div>
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <Switch id="private" checked={isPrivate} onCheckedChange={setIsPrivate} disabled={isLoading} />
               <Label htmlFor="private">Private Channel</Label>
-            </div>
+            </div> */}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>

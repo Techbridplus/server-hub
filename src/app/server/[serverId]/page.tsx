@@ -125,6 +125,8 @@ export default function ServerPage() {
     loadServerData();
   }, [serverId, toast]);
 
+  console.log("server", server)
+
   // Function to refresh announcements
   const refreshAnnouncements = async () => {
     try {
