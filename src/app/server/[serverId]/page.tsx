@@ -162,6 +162,7 @@ export default function ServerPage() {
   const refreshGroups = async () => {
     try {
       const response = await axios.get(`/api/servers/${serverId}/groups`);
+      console.log("response", response) 
       setGroups(response.data.groups);
     } catch (error) {
       console.error("Error refreshing groups:", error);
@@ -172,10 +173,7 @@ export default function ServerPage() {
       });
     }
   };
-
-  console.log(server)
-  console.log("upcomingEvents", upcomingEvents)
-  console.log("pastEvents", pastEvents)
+  // console.log("groups", groups)
 
   const isAdmin = userRole === MemberRole.ADMIN
   const isModerator = userRole === MemberRole.MODERATOR

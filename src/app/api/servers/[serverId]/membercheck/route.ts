@@ -49,3 +49,48 @@ export async function GET(req: NextRequest, { params }: { params: { groupId: str
         }
     });
 }
+
+export async function POST(req: NextRequest, { params }: { params: { serverId: string } }) {
+    const { searchParams } = new URL(req.url);
+    const groupId = searchParams.get("groupId");
+
+    if (!groupId) {
+        console.error("groupId is undefined");
+        return NextResponse.json(
+            { success: false, error: "Missing groupId in request parameters" },
+            { status: 400 }
+        );
+    }
+
+    return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+        const userId = session.user.id;
+
+        // Validate input
+        if (!userId || !groupId) {
+            return NextResponse.json(
+                { success: false, error: "Missing userId or groupId" },
+                { status: 400 }
+            );
+        }
+
+        try {
+            // Check if user is a member of the group
+            const groupMember = await prisma.groupMember.findFirst({
+                where: {
+                    userId,
+                    groupId,
+                },
+            });
+
+            // Return success if user is a member of the group
+            return NextResponse.json({ 
+                success: true, 
+                isMember: !!groupMember,
+                role: groupMember?.role || null
+            });
+        } catch (error) {
+            console.error("Error checking group membership:", error);
+            return NextResponse.json({ error: "Failed to check membership" }, { status: 500 });
+        }
+    });
+}

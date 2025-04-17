@@ -64,12 +64,14 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
   const [isLeaving, setIsLeaving] = useState(false)
   const [isServerMember, setIsServerMember] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isInvited, setIsInvited] = useState(false)
 
   // Check if user is already a member
-  const isMember = currentUserId && group.members?.some(member => member.userId === currentUserId)
-
+  // console.log("currentUserId", currentUserId)
+  const isAdminOrModerator = currentUserId && group.members && (group.members[0]?.role === "ADMIN" || group.members[0]?.role === "MODERATOR")  
+  console.log("isAdminOrModerator", isAdminOrModerator)
   // Check if user is an admin or moderator
-  const [isAdminOrModerator, setIsAdminOrModerator] = useState(false) 
+  const [isGroupMember, setIsGroupMember] = useState(false) 
 
   // Check if user is a member of the server
   useEffect(() => {
@@ -80,37 +82,44 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
       }
 
       try {
-        const response = await axios.get(`/api/servers/${serverId}/membercheck`, {
+        const response = await axios.post(`/api/servers/${serverId}/membercheck`, null, {
           params: {
             groupId: group.id,
           },
         })
-
+        
+        // console.log("response", response)
         
         if (response.status === 200) {
-          const data = await response.data
-          const userRole = data.role
-          setIsAdminOrModerator(userRole === "ADMIN" || userRole === "MODERATOR")
-          setIsServerMember(true);
+          const data = response.data
+          setIsGroupMember(data.isMember)
+          
+          // Check if user is invited to the private group
+          if (group.isPrivate && !isAdminOrModerator) {
+            // You would need to implement an API endpoint to check if the user is invited
+            // For now, we'll assume they're not invited unless they're a member
+            setIsInvited(data.isMember || false)
+          }
         } else if (response.status === 404) {
           // User is not a member of the server
-          setIsServerMember(false);
+          setIsGroupMember(false)
         } else {
           // Handle other response statuses
-          console.error("Unexpected response status:", response.status);
-          const errorData = await response.data
-          console.error("Error from API:", errorData);
+          console.error("Unexpected response status:", response.status)
+          const errorData = response.data
+          console.error("Error from API:", errorData)
         }
       } catch (error) {
-        console.error("Error checking server membership:", error);
+        console.error("Error checking server membership:", error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
-    checkServerMembership();
-  }, [currentUserId, serverId, group.id]); // Ensure group.id is included in the dependency array
-
+    checkServerMembership()
+  }, [currentUserId, serverId, group.id, isAdminOrModerator]) // Added isAdminOrModerator to dependencies
+  console.log("isGroupMember", isGroupMember)
+  // console.log("isAdminOrModerator", isAdminOrModerator)
   const handleEdit = async () => {
     if (!editName.trim()) {
       toast({
@@ -316,6 +325,9 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Users className="h-3 w-3" />
                 <span>{group._count?.members || 0} members</span>
+                {group.isPrivate && (
+                  <span className="ml-1 text-xs text-amber-500">Private</span>
+                )}
               </div>
             </div>
           </div>
@@ -346,48 +358,45 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
         <p className="text-sm text-muted-foreground">{group.description}</p>
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
-        <Link href={`/group/${group.id}?serverId=${serverId}`} className="w-full">
-          <Button variant="outline" className="w-full">
-            View Group
+        {/* Only show View Group button if user is admin/moderator, a member, or invited */}
+        {(isAdminOrModerator || isGroupMember || (group.isPrivate && isInvited)) ? (
+          <Link href={`/group/${group.id}?serverId=${serverId}`} className="w-full">
+            <Button variant="outline" className="w-full">
+              View Group
+            </Button>
+          </Link>
+        ) : (
+          <Button variant="outline" className="w-full" disabled>
+            {group.isPrivate ? "Private Group" : "View Group"}
           </Button>
-        </Link>
+        )}
         
-        {!isLoading && !isAdminOrModerator && (
+        {!isLoading && (
           <>
-            {isServerMember ? (
-              <Button 
+          {!isAdminOrModerator && isGroupMember ? (
+            <Button 
                 variant="destructive" 
-                className="w-full" 
+                className="w-full transition-all duration-300 hover:bg-destructive/90" 
                 onClick={handleLeave}
                 disabled={isLeaving}
               >
                 <UserMinus className="mr-2 h-4 w-4" />
                 {isLeaving ? "Leaving..." : "Leave Group"}
               </Button>
-            ) : !group.isPrivate && isServerMember ? (
+            ): !isAdminOrModerator && !isGroupMember ? (
               <Button 
                 variant="default" 
-                className="w-full" 
+                className="w-full transition-all duration-300 hover:bg-primary/90" 
                 onClick={handleJoin}
                 disabled={isJoining}
               >
                 <UserPlus className="mr-2 h-4 w-4" />
                 {isJoining ? "Joining..." : "Join Group"}
               </Button>
-            ) : group.isPrivate && isServerMember ? (
-              <Button variant="secondary" className="w-full" disabled>
-                Private Group (Invitation Only)
-              </Button>
-            ) : !isServerMember ? (
-              <Button variant="secondary" className="w-full" disabled>
-                Join Server First
-              </Button>
-            ) : (
-              <Button variant="secondary" className="w-full" disabled>
-                Login to Join
-              </Button>
-            )}
+            ):<></>}
           </>
+            
+
         )}
       </CardFooter>
 

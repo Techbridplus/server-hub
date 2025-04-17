@@ -2,11 +2,14 @@ import { type NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { MemberRole } from "@prisma/client"
-
+import { useSession } from "next-auth/react"
 // GET /api/servers/[serverId]/groups - Get server groups
 export async function GET(req: NextRequest, { params }: { params: { serverId: string } }) {
+  const { data: session } = useSession()
   try {
     // Ensure params is properly awaited
+   
+    const userId = session?.user.id
     const { serverId } = await Promise.resolve(params)
     const { searchParams } = new URL(req.url)
     const page = Number.parseInt(searchParams.get("page") || "1")
@@ -19,6 +22,11 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
         serverId,
       },
       include: {
+        members: {
+          where: {
+            userId: userId,
+          },
+        },
         _count: {
           select: {
             members: true,

@@ -31,9 +31,6 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
             where: {
               userId: userId,
             },
-            select: {
-              role: true,
-            },
           },
           _count: {
             select: {
@@ -50,7 +47,18 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
               { startDate: 'asc' }, // Sort upcoming events by startDate ascending
             ],
           },
-          groups: true,
+          groups: {
+            include: {
+              members: {
+                where: {
+                  userId: userId,
+                },
+                select: {
+                  role: true,
+                },
+              },
+            },
+          },
         },
       })
 
