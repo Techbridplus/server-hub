@@ -5,7 +5,7 @@ import { authMiddlewareAppRouter } from "@/lib/auth"
 export async function POST(req: NextRequest, { params }: { params: { serverId: string } }) {
   return authMiddlewareAppRouter(req, async (req, session, prisma) => {
     try {
-      const { serverId } = params
+      const { serverId } = await params
       let accessKey: string | undefined
 
       // Safely parse the request body

@@ -36,6 +36,7 @@ import { Switch } from "@/components/ui/switch"
 import { formatDistanceToNow, isValid } from "date-fns"
 import { useSession } from "next-auth/react"
 import { Announcement, User, Comment } from "@prisma/client"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface AnnouncementWithAuthor extends Announcement {
   author: {
@@ -81,6 +82,7 @@ export function AnnouncementCard({
   const [isLoading, setIsLoading] = useState(false)
   const [isLiking, setIsLiking] = useState(false)
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [isLoadingComments, setIsLoadingComments] = useState(false)
 
   // Edit form state
   const [editTitle, setEditTitle] = useState(announcement.title)
@@ -112,7 +114,12 @@ export function AnnouncementCard({
   const fetchComments = async () => {
     if (!announcement.id) return
     
+    setIsLoadingComments(true)
+    
     try {
+      // Add a delay to show the skeleton loading state
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
       const response = await fetch(`/api/announcements/${announcement.id}/comments`)
       if (!response.ok) throw new Error('Failed to fetch comments')
       const data = await response.json()
@@ -120,6 +127,8 @@ export function AnnouncementCard({
     } catch (error) {
       console.error("Error fetching comments:", error)
       setComments([])
+    } finally {
+      setIsLoadingComments(false)
     }
   }
 
@@ -338,21 +347,48 @@ export function AnnouncementCard({
               </form>
             )}
             <div className="space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="flex space-x-4">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={comment.user.image || undefined} />
-                    <AvatarFallback>{comment.user.name?.[0] || 'U'}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-medium">{comment.user.name}</p>
-                    <p className="text-sm text-gray-500">{comment.content}</p>
-                    <p className="text-xs text-gray-400">
-                      {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                    </p>
+              {isLoadingComments ? (
+                // Skeleton loading state for comments
+                <>
+                  <div className="flex space-x-4">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-64" />
+                    </div>
                   </div>
-                </div>
-              ))}
+                  <div className="flex space-x-4">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-48" />
+                    </div>
+                  </div>
+                  <div className="flex space-x-4">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-56" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className="flex space-x-4">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={comment.user.image || undefined} />
+                      <AvatarFallback>{comment.user.name?.[0] || 'U'}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium">{comment.user.name}</p>
+                      <p className="text-sm text-gray-500">{comment.content}</p>
+                      <p className="text-xs text-gray-400">
+                        {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}

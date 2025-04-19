@@ -64,9 +64,6 @@ export async function GET(
         orderBy,
         skip,
         take: limit,
-        include: {
-          attendees: true,
-        },
       }),
       prisma.event.count({ where }),
     ])

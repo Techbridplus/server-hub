@@ -1,7 +1,7 @@
 "use client"
 
 
-import { Server } from '@prisma/client'
+import { Server, Group } from '@prisma/client'
 import axios from 'axios'
 import { useEffect, useState } from 'react'
 import Link from "next/link"
@@ -19,32 +19,32 @@ import { signOut, useSession } from "next-auth/react"
 function ServerSidebar() {
     const { data: session } = useSession()
     const [myServers, setMyServers] = useState<Server[]>([])
-    const [joinedServers, setJoinedServers] = useState<Server[]>([])
+    const [joinedGroups, setJoinedGroups] = useState<Group[]>([])
     const [isLoading, setIsLoading] = useState(true)
     console.log("image:", session?.user?.image)
     useEffect(() => {
-        if (session) {
-            axios.get("/api/users/me/servers?owned=true")
-                .then((data) => setMyServers(data.data.servers || []))
-                .catch((err) => console.error("Error fetching my servers:", err))
-                .finally(() => setIsLoading(false))
-        }else{
-            setIsLoading(false)
-        }
-    }, [session])
+        const fetchServers = async () => {
+            try {
+                const groupsRes = await fetch('/api/groups/joined')
+                console.log("groupsRes:", groupsRes)
+                if ( !groupsRes.ok) {
+                    throw new Error('Failed to fetch data')
+                }
 
-    useEffect(() => {
-        if (session) {
-            axios.get("/api/users/me/servers?joined=true")
-                .then((data) => setJoinedServers(data.data.servers || []))
-                .catch((err) => console.error("Error fetching joined servers:", err))
-                .finally(() => setIsLoading(false))
-        }else{
-            setIsLoading(false)
+                const groupsData = await groupsRes.json()
+
+                setJoinedGroups(groupsData.groups)
+            } catch (error) {
+                console.error('Error fetching data:', error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        if (session?.user) {
+            fetchServers()
         }
     }, [session])
-    console.log("joinedServers",joinedServers)
-    console.log("myServers",myServers)
 
     return (
         <aside className="hidden w-64 flex-col border-r bg-muted/40 md:flex">
@@ -100,48 +100,13 @@ function ServerSidebar() {
                         </div>
                     </div>
 
-                    <Separator className="my-2" />
-
-                    <div className="py-2">
-                        <div className="mb-2 px-4 flex items-center justify-between">
-                            <h2 className="text-sm font-semibold text-muted-foreground">My Servers</h2>
-                            <Badge variant="secondary" className="text-xs">
-                                {myServers.length}
-                            </Badge>
-                        </div>
-                        <div className="space-y-1">
-                            {isLoading ? (
-                                <div className="flex justify-center py-2">
-                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                                </div>
-                            ) : myServers.length > 0 ? (
-                                myServers.map((server: Server) => (
-                                    <Button key={server.id} variant="ghost" className="w-full justify-start gap-2" asChild>
-                                        <Link href={`/server/${server.id}`}>
-                                            <div className="relative mr-2 h-4 w-4 overflow-hidden rounded">
-                                                <img
-                                                    src={server.imageUrl || "/placeholder.svg"}
-                                                    alt={server.name}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            </div>
-                                            {server.name}
-                                        </Link>
-                                    </Button>
-                                ))
-                            ) : (
-                                <p className="text-xs px-4 text-muted-foreground py-1">No servers created yet</p>
-                            )}
-                        </div>
-                    </div>
-
                     <Separator className="mx-4" />
 
                     <div className="px-4">
                         <div className="mb-2 flex items-center justify-between">
-                            <h2 className="text-sm font-semibold text-muted-foreground">Joined Servers</h2>
+                            <h2 className="text-sm font-semibold text-muted-foreground">Joined Groups</h2>
                             <Badge variant="secondary" className="text-xs">
-                                {joinedServers.length}
+                                {joinedGroups.length}
                             </Badge>
                         </div>
                         <div className="space-y-1">
@@ -149,23 +114,23 @@ function ServerSidebar() {
                                 <div className="flex justify-center py-2">
                                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                                 </div>
-                            ) : joinedServers.length > 0 ? (
-                                joinedServers.map((server) => (
-                                    <Button key={server.id} variant="ghost" className="w-full justify-start" asChild>
-                                        <Link href={`/server/${server.id}`}>
-                                            <div className="relative mr-2 h-4 w-4 overflow-hidden rounded">
+                            ) : joinedGroups.length > 0 ? (
+                                joinedGroups.map((group) => (
+                                    <Button key={group.id} variant="ghost" className="w-full  h-20 justify-start" asChild>
+                                        <Link href={`/group/${group.id}`}>
+                                            <div className="relative mr-2 h-15 w-15 overflow-hidden rounded-full">
                                                 <img
-                                                    src={server.imageUrl || "/placeholder.svg"}
-                                                    alt={server.name}
+                                                    src={group.imageUrl || "/placeholder.svg"}
+                                                    alt={group.name}
                                                     className="h-full w-full object-cover"
                                                 />
                                             </div>
-                                            {server.name}
+                                            {group.name}
                                         </Link>
                                     </Button>
                                 ))
                             ) : (
-                                <p className="text-xs text-muted-foreground py-1">No servers joined yet</p>
+                                <p className="text-xs text-muted-foreground py-1">No groups joined yet</p>
                             )}
                         </div>
                     </div>

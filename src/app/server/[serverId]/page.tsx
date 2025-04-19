@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { CalendarDays, ChevronRight, Edit, MessageSquare, Users, Menu, Shield, UserPlus, Lock } from "lucide-react"
+import { CalendarDays, ChevronRight, Edit, MessageSquare, Users, Menu, Shield, UserPlus, Lock, Home, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
@@ -25,6 +25,8 @@ import React from "react"
 import { useParams } from "next/navigation"
 import { Server, MemberRole, Event, Group, Announcement, ServerMember } from "@prisma/client"
 import { PastEventCard } from "@/components/past-event-card"
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogCancel, AlertDialogAction, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Define the AnnouncementWithAuthor interface
 interface AnnouncementWithAuthor extends Announcement {
@@ -74,9 +76,14 @@ export default function ServerPage() {
 
   // Announcements data
   const [announcements, setAnnouncements] = useState<AnnouncementWithAuthor[]>([])
+  const [isLoadingAnnouncements, setIsLoadingAnnouncements] = useState(false)
 
   // Groups data
   const [groups, setGroups] = useState<Group[]>([])
+
+  // Join server handler
+  const [isJoining, setIsJoining] = useState(false)
+  const [isLeaving, setIsLeaving] = useState(false)
 
   // Load server data and check access
   useEffect(() => {
@@ -125,22 +132,28 @@ export default function ServerPage() {
     loadServerData();
   }, [serverId, toast]);
 
-  console.log("server", server)
 
   // Function to refresh announcements
   const refreshAnnouncements = async () => {
     try {
-      const response = await axios.get(`/api/servers/${serverId}/announcements`);
+      setIsLoadingAnnouncements(true)
+      
+      // Add a delay to show the skeleton loading state
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      const response = await axios.get(`/api/servers/${serverId}/announcements`)
       if (response.data.announcements) {
-        setAnnouncements(response.data.announcements);
+        setAnnouncements(response.data.announcements)
       }
     } catch (error) {
-      console.error("Error refreshing announcements:", error);
+      console.error("Error refreshing announcements:", error)
       toast({
         title: "Error",
         description: "Failed to refresh announcements. Please try again.",
         variant: "destructive",
-      });
+      })
+    } finally {
+      setIsLoadingAnnouncements(false)
     }
   };
 
@@ -161,8 +174,7 @@ export default function ServerPage() {
   // Function to refresh groups
   const refreshGroups = async () => {
     try {
-      const response = await axios.get(`/api/servers/${serverId}/groups`);
-      console.log("response", response) 
+      const response = await axios.get(`/api/servers/${serverId}/groups`); 
       setGroups(response.data.groups);
     } catch (error) {
       console.error("Error refreshing groups:", error);
@@ -235,33 +247,57 @@ export default function ServerPage() {
 
   // Join server handler
   const handleJoinServer = async () => {
-    // try {
-    //   await axios.get(`/api/servers/${serverId}/join`, {
-    //     method: "POST",
-    //   })
+    try {
+      setIsJoining(true)
+      await axios.post(`/api/servers/${serverId}/join`)
 
-    //   toast({
-    //     title: "Success",
-    //     description: "You have joined the server",
-    //   })
+      toast({
+        title: "Success",
+        description: "You have joined the server",
+      })
 
-    //   // Update server data
-    //   const serverData = await axios.get<Server>(`/api/servers/${serverId}`)
-    //   setServer({
-    //     ...serverData.data,
-    //     isJoined: true,
-    //   })
+      // Update server data
+      const serverData = await axios.get<ServerWithMembers>(`/api/servers/${serverId}`)
+      setServer(serverData.data)
 
-    //   // Update user role
-    //   setUserRole("member")
-    // } catch (error) {
-    //   console.error("Error joining server:", error)
-    //   toast({
-    //     title: "Error",
-    //     description: "Failed to join server. Please try again.",
-    //     variant: "destructive",
-    //   })
-    // }
+      // Update user role
+      setUserRole(MemberRole.MEMBER)
+    } catch (error) {
+      console.error("Error joining server:", error)
+      toast({
+        title: "Error",
+        description: "Failed to join server. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsJoining(false)
+    }
+  }
+
+  // Add leave server handler
+  const handleLeaveServer = async () => {
+    try {
+      setIsLeaving(true)
+      const response = await fetch(`/api/servers/${serverId}/leave`, {
+        method: 'POST',
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to leave server')
+      }
+      
+      // Redirect to home page after leaving
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Error leaving server:', error)
+      toast({
+        title: "Error",
+        description: "Failed to leave server. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLeaving(false)
+    }
   }
 
   if (isLoading) {
@@ -350,6 +386,12 @@ export default function ServerPage() {
           </div>
 
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <Button variant="outline" className="flex-1 sm:flex-none" asChild>
+              <Link href="/">
+                <Home className="mr-2 h-4 w-4" />
+                Home
+              </Link>
+            </Button>
             {isAdmin && (
               <>
                 <Button className="flex-1 sm:flex-none" asChild >
@@ -361,9 +403,18 @@ export default function ServerPage() {
               </>
             )}
             <MembersDialog serverId={serverId} />
-            {userRole==MemberRole.VISITOR && (
-              <Button className="flex-1 sm:flex-none" onClick={handleJoinServer}>
-                {server.isPrivate ? (
+            {userRole === MemberRole.VISITOR && (
+              <Button 
+                className="flex-1 sm:flex-none" 
+                onClick={handleJoinServer}
+                disabled={isJoining || isLeaving}
+              >
+                {isJoining ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Joining...
+                  </>
+                ) : server.isPrivate ? (
                   <>
                     <Lock className="mr-2 h-4 w-4" />
                     Request Access
@@ -375,6 +426,50 @@ export default function ServerPage() {
                   </>
                 )}
               </Button>
+            )}
+            {userRole === MemberRole.MEMBER && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="destructive" 
+                    className="flex-1 sm:flex-none"
+                    disabled={isJoining || isLeaving}
+                  >
+                    {isLeaving ? (
+                      <>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Leaving...
+                      </>
+                    ) : (
+                      <>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Leave Server
+                      </>
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Leave Server</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to leave {server.name}? You will need to request access again if you want to rejoin.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLeaveServer} disabled={isLeaving}>
+                      {isLeaving ? (
+                        <>
+                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          Leaving...
+                        </>
+                      ) : (
+                        "Leave Server"
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
             <ShareDialog title={server.name} url={`/server/${serverId}`} type="server" />
           </div>
@@ -524,7 +619,56 @@ export default function ServerPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {announcements.length > 0 ? (
+                  {isLoadingAnnouncements ? (
+                    // Skeleton loading state for announcements
+                    <>
+                      <div className="mb-4">
+                        <div className="flex items-center space-x-4 mb-4">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-24" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-3/4 mb-4" />
+                        <div className="flex space-x-4">
+                          <Skeleton className="h-8 w-16" />
+                          <Skeleton className="h-8 w-16" />
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <div className="flex items-center space-x-4 mb-4">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-3 w-28" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-5/6 mb-4" />
+                        <div className="flex space-x-4">
+                          <Skeleton className="h-8 w-16" />
+                          <Skeleton className="h-8 w-16" />
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <div className="flex items-center space-x-4 mb-4">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-36" />
+                            <Skeleton className="h-3 w-20" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-2/3 mb-4" />
+                        <div className="flex space-x-4">
+                          <Skeleton className="h-8 w-16" />
+                          <Skeleton className="h-8 w-16" />
+                        </div>
+                      </div>
+                    </>
+                  ) : announcements.length > 0 ? (
                     announcements.map((announcement) => (
                       <div className="mb-4" key={announcement.id}>
                         <AnnouncementCard
@@ -670,7 +814,56 @@ export default function ServerPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {announcements.length > 0 ? (
+                  {isLoadingAnnouncements ? (
+                    // Skeleton loading state for announcements
+                    <>
+                      <div className="mb-4">
+                        <div className="flex items-center space-x-4 mb-4">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-24" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-3/4 mb-4" />
+                        <div className="flex space-x-4">
+                          <Skeleton className="h-8 w-16" />
+                          <Skeleton className="h-8 w-16" />
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <div className="flex items-center space-x-4 mb-4">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-3 w-28" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-5/6 mb-4" />
+                        <div className="flex space-x-4">
+                          <Skeleton className="h-8 w-16" />
+                          <Skeleton className="h-8 w-16" />
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <div className="flex items-center space-x-4 mb-4">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-36" />
+                            <Skeleton className="h-3 w-20" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-2/3 mb-4" />
+                        <div className="flex space-x-4">
+                          <Skeleton className="h-8 w-16" />
+                          <Skeleton className="h-8 w-16" />
+                        </div>
+                      </div>
+                    </>
+                  ) : announcements.length > 0 ? (
                     announcements.map((announcement) => (
                       <AnnouncementCard
                         key={announcement.id}

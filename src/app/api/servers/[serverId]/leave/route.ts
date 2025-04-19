@@ -27,12 +27,10 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
       }
 
       // Check if user is a member
-      const membership = await prisma.serverMember.findUnique({
+      const membership = await prisma.serverMember.findFirst({
         where: {
-          userId_serverId: {
             userId: session.user.id,
             serverId,
-          },
         },
       })
 
@@ -41,12 +39,10 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
       }
 
       // Leave server
-      await prisma.serverMember.delete({
+      await prisma.serverMember.deleteMany({
         where: {
-          userId_serverId: {
             userId: session.user.id,
             serverId,
-          },
         },
       })
 

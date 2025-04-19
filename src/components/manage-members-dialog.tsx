@@ -245,7 +245,7 @@ export function MembersDialog({ serverId }: MembersDialogProps) {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button variant="outline">
             <Users className="h-4 w-4 mr-2" />
             Members
           </Button>

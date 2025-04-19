@@ -506,14 +506,14 @@ export default function HomePage() {
                     )}
                   >
                     {filteredServers.map((server) => (
-                      <ServerCard
-                        key={server.id}
-                        server={server}
-                        isAdmin={myServers.some((s) => s.id === server.id)}
-                        layout={layoutType}
-                        onJoin={() => handleJoinServer(server.id)}
-                        isJoined={joinedServers.some((s) => s.id === server.id)}
-                      />
+                        <ServerCard
+                          key={server.id}
+                          server={server}
+                          isAdmin={myServers.some((s) => s.id === server.id)}
+                          layout={layoutType}
+                          onJoin={() => handleJoinServer(server.id)}
+                          isJoined={joinedServers.some((s) => s.id === server.id)}
+                        />
                     ))}
 
                     { !isLoading &&filteredServers.length === 0 &&  (
