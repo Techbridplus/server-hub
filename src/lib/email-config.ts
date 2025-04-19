@@ -10,13 +10,12 @@ import nodemailer from 'nodemailer'
 //     pass: process.env.SMTP_PASSWORD,
 //   },
 // })
-const passkey = "lgqb kvhs wast zrsr";
-const gmail = "grgnld3970@gmail.com";
+
 export const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: gmail,
-    pass: passkey,
+    user: process.env.gmail,
+    pass: process.env.passkey,
   },
 });
 

@@ -29,7 +29,7 @@ export async function sendVerificationEmail(email: string) {
 
     // Send email using Nodemailer
     await transporter.sendMail({
-      from: "grgnld3970@gmail.com",
+      from: process.env.gmail,
       to: email,
       ...emailTemplates.verification(otp)
     })
