@@ -1,16 +1,5 @@
 import nodemailer from 'nodemailer'
 
-// Create a transporter using SMTP
-// export const transporter = nodemailer.createTransport({
-//   host: process.env.SMTP_HOST,
-//   port: Number(process.env.SMTP_PORT),
-//   secure: process.env.SMTP_SECURE === 'true',
-//   auth: {
-//     user: process.env.SMTP_USER,
-//     pass: process.env.SMTP_PASSWORD,
-//   },
-// })
-
 export const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -18,6 +7,8 @@ export const transporter = nodemailer.createTransport({
     pass: process.env.passkey,
   },
 });
+
+
 
 // Email templates
 export const emailTemplates = {

@@ -496,14 +496,7 @@ export default function HomePage() {
                   )}
 
                   <div
-                    className={cn(
-                      "grid gap-6",
-                      layoutType === "modern"
-                        ? "grid-cols-1"
-                        : layoutType === "grid"
-                          ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                          : "grid-cols-1",
-                    )}
+                    className={"grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" }
                   >
                     {filteredServers.map((server) => (
                         <ServerCard
