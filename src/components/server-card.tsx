@@ -83,114 +83,6 @@ export function ServerCard({
     }
   };
 
-  // Modern layout
-  if (layout === "modern") {
-    return (
-      <Card className={cn("overflow-hidden transition-all hover:shadow-md", featured && "border-primary/50")}>
-        <div className="flex flex-col sm:flex-row">
-          <div className="relative aspect-video w-full sm:aspect-square sm:w-64">
-            <Image src={server.imageUrl || "/placeholder.svg"} alt={server.name} fill className="object-cover" />
-            {server.status && (
-              <Badge variant="secondary" className="absolute left-2 top-2 bg-background/80 backdrop-blur-sm">
-                {server.status.charAt(0).toUpperCase() + server.status.slice(1)}
-              </Badge>
-            )}
-          </div>
-          <div className="flex flex-1 flex-col">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="line-clamp-1">{server.name}</CardTitle>
-                  {isAdmin && <Crown className="h-4 w-4 text-amber-500" />}
-                  {server.isExclusive && (
-                    <Badge variant="secondary">
-                      <Star className="mr-1 h-3 w-3 text-amber-500" />
-                      Exclusive
-                    </Badge>
-                  )}
-                  {server.isPrivate && (
-                    <Badge variant="secondary">
-                      <Lock className="mr-1 h-3 w-3 text-amber-500" />
-                      Private
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <CardDescription className="flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                <span>{(server._count?.members || 0).toLocaleString()} members</span>
-                <span className="mx-1">•</span>
-                <Badge variant="outline" className="text-xs">
-                  {server.category}
-                </Badge>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pb-2">
-              {server.description && <p className="line-clamp-2 text-sm text-muted-foreground">{server.description}</p>}
-            </CardContent>
-            <CardFooter className="mt-auto">
-              {isAdmin ? (
-                <Link href={`/server/${server.id}`} className="w-full">
-                  <Button variant="default" className="w-full">
-                    Manage Server
-                  </Button>
-                </Link>
-              ) : (
-                <div className="flex w-full gap-2">
-                  {!isJoined ? (
-                    <Button 
-                      variant="outline" 
-                      className="w-full" 
-                      onClick={handleJoin}
-                      disabled={isJoining}
-                    >
-                      {isJoining ? "Joining..." : (server.isPrivate ? "Request Access" : "Join")}
-                    </Button>
-                  ) : (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          className="w-full"
-                          disabled={isLeaving}
-                        >
-                          {isLeaving ? "Leaving..." : "Leave"}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Leave Server</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to leave {server.name}? You will need to request access again if you want to rejoin.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleLeave} disabled={isLeaving}>
-                            {isLeaving ? "Leaving..." : "Leave Server"}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                  {!server.isPrivate && (
-                    <Link href={`/server/${server.id}`} className="w-full">
-                      <Button variant="secondary" className="w-full">
-                        View
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              )}
-            </CardFooter>
-          </div>
-        </div>
-      </Card>
-    )
-  }
-
-  // Grid layout
-  if (layout === "grid") {
     return (
       <Card
         className={cn(
@@ -244,16 +136,14 @@ export function ServerCard({
             {isAdmin && <Crown className="h-4 w-4 text-amber-500" />}
           </div>
 
-          {server.description && (
-            <p className="line-clamp-2 text-sm text-muted-foreground">{server.description}</p>
-          )}
+            <p className="line-clamp-2 text-sm text-muted-foreground h-[20px]">{server.description}</p>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Users className="h-4 w-4" />
             <span>{(server._count?.members || 0).toLocaleString()} members</span>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex justify-center gap-2">
             {isAdmin ? (
               <Button variant="default" className="w-full" asChild>
                 <Link href={`/server/${server.id}`}>
@@ -261,9 +151,9 @@ export function ServerCard({
                 </Link>
               </Button>
             ) : (
-              <div className="flex  gap-1">
+              <>
                 {!server.isPrivate && (
-                  <Button className="w-full transition-all duration-300 " asChild>
+                  <Button className=" transition-all duration-300 w-1/2" asChild>
                     <Link href={`/server/${server.id}`}>
                       View
                     </Link>
@@ -272,7 +162,7 @@ export function ServerCard({
                 {!isJoined ? (
                   <Button 
                     variant="default" 
-                    className="w-full" 
+                    className={server.isPrivate ? "w-full": "w-1/2"} 
                     onClick={handleJoin}
                     disabled={isJoining}
                   >
@@ -283,7 +173,7 @@ export function ServerCard({
                     <AlertDialogTrigger asChild>
                       <Button 
                         variant="destructive" 
-                        className="w-full transition-all duration-300 hover:bg-destructive/90"
+                        className=" transition-all duration-300 hover:bg-destructive/90 w-1/2"
                         disabled={isLeaving}
                       >
                         {isLeaving ? "Leaving..." : "Leave"}
@@ -306,122 +196,11 @@ export function ServerCard({
                   </AlertDialog>
                 )}
                 
-              </div>
+              </>
             )}
           </div>
         </div>
       </Card>
     )
   }
-
-  // List layout
-  return (
-    <Card
-      className={cn(
-        "overflow-hidden transition-all hover:shadow-md",
-        featured ? "border-primary/50 bg-primary/5" : "",
-        server.isPrivate ? "border-amber-500/20" : "",
-      )}
-    >
-      <div className="flex flex-col sm:flex-row">
-        <div className="relative h-32 w-full sm:h-auto sm:w-48">
-          <Image src={server.imageUrl || "/placeholder.svg"} alt={server.name} fill className="object-cover" />
-          {server.status && (
-            <Badge variant="secondary" className="absolute left-2 top-2 bg-background/80 backdrop-blur-sm">
-              {server.status.charAt(0).toUpperCase() + server.status.slice(1)}
-            </Badge>
-          )}
-        </div>
-        <div className="flex flex-1 flex-col">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CardTitle className="line-clamp-1">{server.name}</CardTitle>
-                {isAdmin && <Crown className="h-4 w-4 text-amber-500" />}
-                {server.isExclusive && (
-                  <Badge variant="secondary">
-                    <Star className="mr-1 h-3 w-3 text-amber-500" />
-                    Exclusive
-                  </Badge>
-                )}
-                {server.isPrivate && (
-                  <Badge variant="secondary">
-                    <Lock className="mr-1 h-3 w-3 text-amber-500" />
-                    Private
-                  </Badge>
-                )}
-              </div>
-            </div>
-            <CardDescription className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              <span>{(server._count?.members || 0).toLocaleString()} members</span>
-              <span className="mx-1">•</span>
-              <Badge variant="outline" className="text-xs">
-                {server.category}
-              </Badge>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pb-2">
-            {server.description && <p className="line-clamp-2 text-sm text-muted-foreground">{server.description}</p>}
-          </CardContent>
-          <CardFooter className="mt-auto">
-            {isAdmin ? (
-              <Link href={`/server/${server.id}`} className="w-full">
-                <Button variant="default" className="w-full">
-                  Manage Server
-                </Button>
-              </Link>
-            ) : (
-              <div className="flex w-full gap-2">
-                {!isJoined ? (
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
-                    onClick={handleJoin}
-                    disabled={isJoining}
-                  >
-                    {isJoining ? "Joining..." : (server.isPrivate ? "Request Access" : "Join")}
-                  </Button>
-                ) : (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        className="w-full"
-                        disabled={isLeaving}
-                      >
-                        {isLeaving ? "Leaving..." : "Leave"}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Leave Server</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to leave {server.name}? You will need to request access again if you want to rejoin.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleLeave} disabled={isLeaving}>
-                          {isLeaving ? "Leaving..." : "Leave Server"}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-                {!server.isPrivate && (
-                  <Link href={`/server/${server.id}`} className="w-full">
-                    <Button variant="secondary" className="w-full">
-                      View
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            )}
-          </CardFooter>
-        </div>
-      </div>
-    </Card>
-  )
-}
 
