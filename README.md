@@ -2,6 +2,8 @@
 
 A modern server management and communication platform built with Next.js and Socket.io.
 
+hlo there
+
 ## Features
 
 - Real-time member status updates
