@@ -6,6 +6,7 @@ dotenv.config();
 
 const httpServer = createServer();
 
+console.log("hello js:");
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
