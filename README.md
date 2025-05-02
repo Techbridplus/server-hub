@@ -85,6 +85,4 @@ npm start
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-nice one
-thanks you.
+your project have issue in middleware please give me access to code.
