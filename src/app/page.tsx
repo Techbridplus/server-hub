@@ -331,6 +331,9 @@ export default function HomePage() {
     setFilteredServers(filtered)
   }, [allServers, activeCategory, searchQuery])
 
+    console.log("Hello World");
+
+
   // Handle category change
   const handleCategoryChange = async (category: string) => {
     setActiveCategory(category)
