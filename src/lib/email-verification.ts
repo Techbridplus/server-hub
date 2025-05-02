@@ -5,6 +5,8 @@ import { promisify } from "util"
 
 const resolveMx = promisify(dns.resolveMx)
 
+console.log("hello world");
+
 interface VerificationData {
   otp: string
   attempts: number
@@ -67,7 +69,7 @@ export async function verifyEmail(email: string, otp: string) {
   verificationStore.delete(email)
   return { success: true }
 }
-
+console.log("helloe wold");
 export async function checkEmailExists(email: string): Promise<boolean> {
   try {
     const domain = email.split("@")[1]
