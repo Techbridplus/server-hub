@@ -181,6 +181,10 @@ export default function HomePage() {
     fetchMyServers()
   }, [session, toast])
 
+
+
+
+  irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide irrelevabct cide 
   // Fetch joined servers only if user is logged in
   useEffect(() => {
     const fetchJoinedServers = async () => {
