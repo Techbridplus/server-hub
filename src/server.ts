@@ -22,7 +22,4 @@ app.prepare().then(() => {
   })
 }) 
 
-for(int i=0;i<20;i++){
-  
-console.log("hello world")
-}
+console.log("helllo");
