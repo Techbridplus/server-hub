@@ -541,63 +541,7 @@ export default function HomePage() {
               )}
             </TabsContent>
 
-            <TabsContent value="my-servers" className="mt-6 animate-fade-in">
-              {isLoading ? (
-                <div className={cn(
-                  "grid gap-6",
-                  layoutType === "modern"
-                    ? "grid-cols-1"
-                    : layoutType === "grid"
-                      ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                      : "grid-cols-1",
-                )}>
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="rounded-lg border bg-card p-4 animate-pulse">
-                      <div className="aspect-square w-full rounded-md bg-muted mb-4" />
-                      <div className="h-4 w-3/4 bg-muted rounded mb-2" />
-                      <div className="h-3 w-1/2 bg-muted rounded" />
-                    </div>
-                  ))}
-                </div>
-              ) : myServers.length > 0 ? (
-                <>
-                  <div className={cn(
-                    "grid gap-6",
-                    layoutType === "modern"
-                      ? "grid-cols-1"
-                      : layoutType === "grid"
-                        ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                        : "grid-cols-1",
-                  )}>
-                    {myServers.map((server) => (
-                      <ServerCard key={server.id} server={server} isAdmin={true} layout={layoutType} />
-                    ))}
-                  </div>
-                  {hasMore && (
-                    <div ref={ref} className="mt-6 flex justify-center">
-                      {isLoadingMore && (
-                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                      )}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                  <h3 className="mb-2 text-lg font-semibold">No servers created yet</h3>
-                  <p className="mb-4 text-sm text-muted-foreground">Create your first server to get started</p>
-                  <CreateServerModal
-                    // buttonText="Create Server"
-                    // onServerCreated={() => {
-                    //   // Refresh my servers after creation
-                    //   apiClient<Server[]>("/api/users/me/servers?owned=true")
-                    //     .then((data) => setMyServers(data))
-                    //     .catch((err) => console.error("Error refreshing servers:", err))
-                    // }}
-                  />
-                </div>
-              )}
-            </TabsContent>
-
+            
             <TabsContent value="joined" className="mt-6 animate-fade-in">
               {isLoading ? (
                 <div className={cn(
@@ -618,22 +562,7 @@ export default function HomePage() {
                 </div>
               ) : joinedServers.length > 0 ? (
                 <>
-                  <div className={cn(
-                    "grid gap-6",
-                    layoutType === "modern"
-                      ? "grid-cols-1"
-                      : layoutType === "grid"
-                        ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                        : "grid-cols-1",
-                  )}>
-                    {joinedServers.map((server) => (
-                      <ServerCard
-                        key={server.id}
-                        server={server}
-                        isAdmin={myServers.some((s) => s.id === server.id)}
-                        layout={layoutType}
-                        isJoined={true}
-                      />
+                  
                     ))}
                   </div>
                   {hasMore && (
