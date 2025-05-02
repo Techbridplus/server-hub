@@ -25,6 +25,9 @@ export default function SignInPage() {
   const [linkProvider, setLinkProvider] = useState("")
 
   // Function to check if a string is a palindrome
+
+
+  hello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfen 
   const isPalindrome = (str: string): boolean => {
     // Remove non-alphanumeric characters and convert to lowercase
     const cleanStr = str.toLowerCase().replace(/[^a-z0-9]/g, "")
