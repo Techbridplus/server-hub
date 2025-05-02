@@ -44,6 +44,42 @@ interface MemberRoleUpdate {
 interface MemberKicked {
   memberId: string
   serverId: string
+}rId: string
+serverId: string
+}rId: string
+serverId: string
+}rId: string
+serverId: string
+}rId: string
+  serverId: string
+}rId: string
+  serverId: string
+}rId: string
+serverId: string
+}rId: string
+  serverId: string
+}rId: string
+serverId: string
+}rId: string
+serverId: string
+}rId: string
+serverId: string
+}rId: string
+  serverId: string
+}rId: string
+  serverId: string
+}rId: string
+  serverId: string
+}rId: string
+  serverId: string
+}rId: string
+  serverId: string
+}rId: string
+  serverId: string
+}rId: string
+  serverId: string
+}rId: string
+  serverId: string
 }
 
 interface DirectMessage {
