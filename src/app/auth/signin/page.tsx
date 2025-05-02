@@ -14,8 +14,17 @@ import { Separator } from "@/components/ui/separator"
 import { Github, Mail } from "lucide-react"
 import { LinkAccountModal } from "@/components/link-account-modal"
 
-export function PrintSomeText() {
-  console.log("Lets see if this gets accepted or not.")
+// New function for validating credentials
+const validateCredentials = (email: string, password: string): { isValid: boolean; errorMessage: string | null } => {
+  if (!email || !email.includes('@')) {
+    return { isValid: false, errorMessage: "Please enter a valid email address" };
+  }
+  
+  if (!password || password.length < 6) {
+    return { isValid: false, errorMessage: "Password must be at least 6 characters" };
+  }
+  
+  return { isValid: true, errorMessage: null };
 }
 
 export default function SignInPage() {
@@ -33,7 +42,14 @@ export default function SignInPage() {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
-    PrintSomeText();
+    
+    // Use the new validation function
+    const validation = validateCredentials(email, password);
+    if (!validation.isValid) {
+      setError(validation.errorMessage);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const result = await signIn("credentials", {
@@ -83,7 +99,7 @@ export default function SignInPage() {
           )}
 
           <form 
-          // onSubmit={handleSubmit}
+          onSubmit={handleSubmit}
            className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
