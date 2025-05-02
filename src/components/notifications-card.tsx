@@ -10,14 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
-
-interface Notification {
-  id: string
-  title: string
-  message: string
-  isRead: boolean
-  createdAt: string
-}
+import { Notification } from "@/lib/types"
 
 export function NotificationsCard() {
   const { toast } = useToast()
