@@ -1,5 +1,6 @@
 "use client"
-
+//This is a comment and it should be merged
+import { K2D } from "next/font/google"
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
-import { Github, am am cm am s Mail } from "lucide-react"
+import { Github, Mail } from "lucide-react"
 import { LinkAccountModal } from "@/components/link-account-modal"
 
 export default function SignInPage() {
@@ -49,10 +50,19 @@ export default function SignInPage() {
   }
 
   const handleOAuthSignIn = async (provider: string) => {
-    setIsLoading(true)/react-av
-    setIsLoading(true)/react-av
+    setIsLoading(true)
+    try {
+      await signIn(provider, {
+        callbackUrl: "/",
+      })
+    } catch (error) {
+      setError("An unexpected error occurred")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
+  
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
       <Card className="mx-auto w-full max-w-md">
@@ -62,53 +72,7 @@ export default function SignInPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
-            <Al
-            <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
-              <Card className="mx-auto w-full max-w-md">
-                <CardHeader className="space-y-1 text-center">
-                  <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-                  <CardDescription>Enter your credentials to sign in to your account</CardDescription>
-                </CardHeader>ame="mx-auto w-full max-w-md">
-                <CardHeader className="space-y-1 text-center">
-                  <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-                  <CardDescription>Enter your credentials to sign in to your account</CardDescription>
-                </CardHeader>ame="mx-auto w-full max-w-md">
-                <CardHeader className="space-y-1 text-center">
-                  <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-                  <CardDescription>Enter your credentials to sign in to your account</CardDescription>
-                </CardHeader>ame="mx-auto w-full max-w-md">
-                <CardHeader className="space-y-1 text-center">
-                  <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-                  <CardDescription>Enter your credentials to sign in to your account</CardDescription>
-                </CardHeader>ame="mx-auto w-full max-w-md">
-                <CardHeader className="space-y-1 text-center">
-                  <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-                  <CardDescription>Enter your credentials to sign in to your account</CardDescription>
-                </CardHeader>ame="mx-auto w-full max-w-md">
-                <CardHeader className="space-y-1 text-center">
-                  <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-                  <CardDescription>Enter your credentials to sign in to your account</CardDescription>
-                </CardHeader>ame="mx-auto w-full max-w-md">
-                <CardHeader className="space-y-1 text-center">
-                  <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-                  <CardDescription>Enter your credentials to sign in to your account</CardDescription>
-                </CardHeader>ame="mx-auto w-full max-w-md">
-                <CardHeader className="space-y-1 text-center">
-                  <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-                  <CardDescription>Enter your credentials to sign in to your account</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {error && (
-                    <Al
-                    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
-                      <Card className="mx-auto w-full max-w-md">
-                        <CardHeader className="space-y-1 text-center">
-                          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-                          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          {error && (
-                            <Alert variant="destructive">
+            <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
