@@ -11,7 +11,7 @@ const io = new Server(httpServer, {
     methods: ["GET", "POST"]
   }
 })
-console.log(io);
+
 const PORT = process.env.SOCKET_PORT || 3001
 
 // Enums for better type safety
