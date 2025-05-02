@@ -465,11 +465,7 @@ export default function HomePage() {
           </div>
 
           <Tabs defaultValue="discover" className="mb-8" onValueChange={setActiveTab}>
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="discover">Discover</TabsTrigger>
-              <TabsTrigger value="my-servers">My Servers</TabsTrigger>
-              <TabsTrigger value="joined">Joined Servers</TabsTrigger>
-            </TabsList>
+           
 
             <TabsContent value="discover" className="mt-6 animate-fade-in">
               {isLoading ? (
@@ -478,7 +474,7 @@ export default function HomePage() {
                   layoutType === "modern"
                     ? "grid-cols-1"
                     : layoutType === "grid"
-                      ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                      ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ,5"
                       : "grid-cols-1",
                 )}>
                   {[...Array(8)].map((_, i) => (
