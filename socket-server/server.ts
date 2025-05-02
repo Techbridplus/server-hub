@@ -1,5 +1,5 @@
 import { createServer } from "http"
-import { Server } from "socket.io"
+import { Server, Socket } from "socket.io"
 import dotenv from "dotenv"
 
 dotenv.config()
@@ -12,15 +12,32 @@ const io = new Server(httpServer, {
   }
 })
 
+const PORT = process.env.SOCKET_PORT || 3001
+
+// Enums for better type safety
+enum MemberStatus {
+  ONLINE = "online",
+  OFFLINE = "offline",
+  IDLE = "idle",
+  DND = "dnd"
+}
+
+enum MemberRole {
+  ADMIN = "ADMIN",
+  MODERATOR = "MODERATOR",
+  MEMBER = "MEMBER"
+}
+
+// Interfaces
 interface MemberStatusUpdate {
   userId: string
-  status: "online" | "offline" | "idle" | "dnd"
+  status: MemberStatus
   serverId: string
 }
 
 interface MemberRoleUpdate {
   memberId: string
-  role: "ADMIN" | "MODERATOR" | "MEMBER"
+  role: MemberRole
   serverId: string
 }
 
@@ -50,19 +67,14 @@ interface CallEnded {
   to: string
 }
 
-io.on("connection", (socket) => {
+// Event Handlers
+const handleConnection = (socket: Socket) => {
   const userId = socket.handshake.query.userId as string
   const serverId = socket.handshake.query.serverId as string
 
-  if (userId) {
-    socket.join(`user:${userId}`)
-  }
+  if (userId) socket.join(`user:${userId}`)
+  if (serverId) socket.join(`server:${serverId}`)
 
-  if (serverId) {
-    socket.join(`server:${serverId}`)
-  }
-
-  // Handle member status updates
   socket.on("memberStatusUpdate", (data: MemberStatusUpdate) => {
     io.to(`server:${data.serverId}`).emit("memberStatusUpdate", {
       userId: data.userId,
@@ -70,27 +82,18 @@ io.on("connection", (socket) => {
     })
   })
 
-  // Handle member role updates
   socket.on("memberRoleUpdate", (data: MemberRoleUpdate) => {
-    io.to(`server:${data.serverId}`).emit("memberRoleUpdate", {
-      memberId: data.memberId,
-      role: data.role
-    })
+    io.to(`server:${data.serverId}`).emit("memberRoleUpdate", data)
   })
 
-  // Handle member kicks
   socket.on("memberKicked", (data: MemberKicked) => {
-    io.to(`server:${data.serverId}`).emit("memberKicked", {
-      memberId: data.memberId
-    })
+    io.to(`server:${data.serverId}`).emit("memberKicked", data)
   })
 
-  // Handle direct messages
   socket.on("directMessage", (message: DirectMessage) => {
     io.to(`user:${message.receiverId}`).emit("directMessage", message)
   })
 
-  // Handle call signals
   socket.on("callSignal", (data: CallSignal) => {
     io.to(`user:${data.to}`).emit("callSignal", {
       ...data,
@@ -98,23 +101,22 @@ io.on("connection", (socket) => {
     })
   })
 
-  // Handle call ended
   socket.on("callEnded", (data: CallEnded) => {
     io.to(`user:${data.to}`).emit("callEnded")
   })
 
   socket.on("disconnect", () => {
-    if (userId) {
+    if (userId && serverId) {
       io.to(`server:${serverId}`).emit("memberStatusUpdate", {
         userId,
-        status: "offline"
+        status: MemberStatus.OFFLINE
       })
     }
   })
-})
+}
 
-const PORT = process.env.SOCKET_PORT || 3001
+io.on("connection", handleConnection)
 
 httpServer.listen(PORT, () => {
   console.log(`Socket.io server running on port ${PORT}`)
-}) 
+})
