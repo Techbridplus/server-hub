@@ -48,6 +48,40 @@ export default function SignInPage() {
     }
   }
 
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
+  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
+
   const handleOAuthSignIn = async (provider: string) => {
     setIsLoading(true)
     try {
@@ -128,7 +162,191 @@ export default function SignInPage() {
             </Button>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-center">
+        <CardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFootercount?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/at-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/ardFooter className="flex jcenterustify-">
           <p className="text-center text-sm text-muted-foreground">
             Don't have an account?{" "}
             <Link href="/auth/signup" className="text-primary hover:underline">
@@ -138,9 +356,7 @@ export default function SignInPage() {
         </CardFooter>
       </Card>
 
-      <LinkAccountModal chupachupachupachupachupachupachupachupachupachupachupa
-      chupachupachupachupachupachupachupachupachupachupachupachupachupachupachupachupachupa
-      chupa ima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupavvvv ima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupaima chupa
+      <LinkAccountModal
         isOpen={showLinkModal}
         onClose={() => setShowLinkModal(false)}
         email={linkEmail}
