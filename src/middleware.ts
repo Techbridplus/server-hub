@@ -2,30 +2,30 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const pathname = request.nextUrl.pathname;
 
   if (pathname === "/api/socket") {
-    console.log("WebSocket upgrade attempt or API hit detected.");
+    const upgradeHeader = request.headers.get("upgrade")?.toLowerCase();
 
-    const upgrade = request.headers.get("upgrade");
+    if (upgradeHeader === "websocket") {
+      console.log("[Middleware] WebSocket upgrade request detected for /api/socket.");
 
-    // Handle WebSocket upgrade request
-    if (upgrade?.toLowerCase() === "websocket") {
       return new NextResponse(null, {
         status: 101,
         headers: {
           Upgrade: "websocket",
-          Connection: "Upgrade", // fix typo: should be "Upgrade"
+          Connection: "Upgrade", // Correct header
         },
       });
     }
+
+    console.log("[Middleware] Non-websocket request to /api/socket.");
   }
 
   return NextResponse.next();
 }
 
-console.log("helllo");
-
+// Apply only to /api/socket
 export const config = {
   matcher: "/api/socket",
 };
