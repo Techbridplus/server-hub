@@ -219,3 +219,23 @@ export async function isServerAdmin(userId: string, serverId: string): Promise<b
   return server?.ownerId === userId;
 }
 
+/**
+ * Checks if a user is a member of a server
+ * @param userId The ID of the user to check
+ * @param serverId The ID of the server to check membership for
+ * @returns Promise<boolean> True if the user is a member, false otherwise
+ */
+export async function isServerMember(userId: string, serverId: string): Promise<boolean> {
+  // Look for a membership record for this user in this server
+  const membership = await prisma.serverMember.findFirst({
+    where: {
+      userId: userId,
+      serverId: serverId,
+      status: "ACCEPTED" // Only count accepted memberships
+    }
+  });
+  
+  // User is a member if a membership record exists
+  return !!membership;
+}
+

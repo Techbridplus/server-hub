@@ -88,26 +88,18 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
           },
         })
         
-        // console.log("response", response)
-        
         if (response.status === 200) {
           const data = response.data
-          setIsGroupMember(data.isMember)
+          setIsServerMember(data.isMember)
+          setIsGroupMember(data.isGroupMember)
           
           // Check if user is invited to the private group
           if (group.isPrivate && !isAdminOrModerator) {
-            // You would need to implement an API endpoint to check if the user is invited
-            // For now, we'll assume they're not invited unless they're a member
             setIsInvited(data.isMember || false)
           }
         } else if (response.status === 404) {
-          // User is not a member of the server
+          setIsServerMember(false)
           setIsGroupMember(false)
-        } else {
-          // Handle other response statuses
-          console.error("Unexpected response status:", response.status)
-          const errorData = response.data
-          console.error("Error from API:", errorData)
         }
       } catch (error) {
         console.error("Error checking server membership:", error)
@@ -117,7 +109,7 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
     }
 
     checkServerMembership()
-  }, [currentUserId, serverId, group.id, isAdminOrModerator]) // Added isAdminOrModerator to dependencies
+  }, [currentUserId, serverId, group.id, isAdminOrModerator])
   console.log("isGroupMember", isGroupMember)
   // console.log("isAdminOrModerator", isAdminOrModerator)
   const handleEdit = async () => {
@@ -228,14 +220,11 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
     setIsJoining(true)
 
     try {
-      const response = await fetch(`/api/groups/${group.id}/join`, {
+      const response = await fetch(`/api/servers/${serverId}/groups/${group.id}/join`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          serverId,
-        }),
       })
 
       if (!response.ok) {
@@ -247,20 +236,11 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
       
       toast({
         title: "Success",
-        description: data.message || "You have joined the group successfully",
+        description: "You have joined the group successfully",
       })
       
       // Update local state to reflect membership
-      if (group.members) {
-        group.members.push({
-          id: data.member.id,
-          userId: currentUserId,
-          groupId: group.id,
-          role: "MEMBER",
-          joinedAt: new Date(),
-        })
-      }
-      
+      setIsGroupMember(true)
       router.refresh() // Refresh the page to show updated data
     } catch (error) {
       console.error("Error joining group:", error)
