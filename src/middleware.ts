@@ -11,7 +11,7 @@ export function middleware(request: NextRequest) {
         status: 101,
         headers: {
           "Upgrade": "websocket",
-          "Connection": "Upgrade"
+          "Connection": "Update"
         }
       })
     }
@@ -19,6 +19,11 @@ export function middleware(request: NextRequest) {
 
   return NextResponse.next()
 }
+
+export function middleware(request:NextRequest){
+  if(request.nextUrl.pathname=="api/socket"){
+    console.log("udate");
+  }}
 
 export const config = {
   matcher: "/api/socket"
