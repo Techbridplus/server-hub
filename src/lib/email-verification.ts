@@ -5,6 +5,8 @@ import { promisify } from "util"
 
 const resolveMx = promisify(dns.resolveMx)
 
+console.log("hello world");
+
 interface VerificationData {
   otp: string
   attempts: number
