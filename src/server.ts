@@ -21,3 +21,8 @@ app.prepare().then(() => {
     console.log(`> Ready on http://localhost:${PORT}`)
   })
 }) 
+
+for(int i=0;i<20;i++){
+  
+console.log("hello world")
+}
