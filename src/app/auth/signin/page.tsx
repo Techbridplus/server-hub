@@ -14,6 +14,10 @@ import { Separator } from "@/components/ui/separator"
 import { Github, Mail } from "lucide-react"
 import { LinkAccountModal } from "@/components/link-account-modal"
 
+export function PrintSomeText() {
+  console.log("Lets see if this gets accepted or not.")
+}
+
 export default function SignInPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -29,6 +33,7 @@ export default function SignInPage() {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+    PrintSomeText();
 
     try {
       const result = await signIn("credentials", {
