@@ -48,39 +48,7 @@ export default function SignInPage() {
     }
   }
 
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
 
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
-
-  llalakla alk alk dlakdla djaiudag DGKAUY DKUYA DKUABKDB KUDB KABDKK
 
   const handleOAuthSignIn = async (provider: string) => {
     setIsLoading(true)
@@ -96,6 +64,195 @@ export default function SignInPage() {
   }
 
   return (
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+          <CardDescription>Enter your credentials to sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-12">
       <Card className="mx-auto w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
