@@ -16,7 +16,6 @@ import { useSession } from "next-auth/react"
 import { useInView } from "react-intersection-observer"
 import axios from "axios"
 import ServerSidebar from "@/components/server-sidebar"
-import { NotificationModal } from "@/components/notification-modal"
 
 interface Server {
   id: string
@@ -66,7 +65,6 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [showNotifications, setShowNotifications] = useState(false)
   const { ref, inView } = useInView()
 
   const handleJoinServer = async (serverId: string) => {
@@ -394,7 +392,7 @@ export default function HomePage() {
             <div className="ml-auto flex items-center gap-2">
               <ThemeToggle />
               <ColorSchemeSelector />
-              <Button variant="ghost" size="icon" onClick={() => setShowNotifications(true)}>
+              <Button variant="ghost" size="icon">
                 <Bell className="h-5 w-5" />
                 <span className="sr-only">Notifications</span>
               </Button>
@@ -656,7 +654,6 @@ export default function HomePage() {
           </Tabs>
         </div>
       </main>
-      <NotificationModal isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
     </div>
   )
 }
