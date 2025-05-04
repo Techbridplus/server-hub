@@ -24,17 +24,6 @@ export default function SignInPage() {
   const [linkEmail, setLinkEmail] = useState("")
   const [linkProvider, setLinkProvider] = useState("")
 
-  // Function to check if a string is a palindrome
-
-
-  hello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfenhello jkenk fkn feefnjnf kwjfen 
-  const isPalindrome = (str: string): boolean => {
-    // Remove non-alphanumeric characters and convert to lowercase
-    const cleanStr = str.toLowerCase().replace(/[^a-z0-9]/g, "")
-    // Compare the string with its reverse
-    return cleanStr === cleanStr.split("").reverse().join("")
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -139,7 +128,7 @@ export default function SignInPage() {
             </Button>
           </div>
         </CardContent>
-        <CardFooter className="flex jcenterustify-">
+        <CardFooter className="flex justify-center">
           <p className="text-center text-sm text-muted-foreground">
             Don't have an account?{" "}
             <Link href="/auth/signup" className="text-primary hover:underline">
