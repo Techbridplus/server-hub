@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     if (!emailExists) {
       return NextResponse.json(
         { success: false, error: "Email domain does not exist" },
-        { status: 400 }
+        { status: 404 }
       )
     }
 

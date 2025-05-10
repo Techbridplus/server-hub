@@ -2,20 +2,21 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { MemberRole } from "@prisma/client"
 
 // GET /api/servers/[serverId]/members - Get server members
 export async function GET(
-  req: NextRequest,
-  params: Promise<{ serverId: string }>
+  req: Request,
+  { params }: { params: { serverId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!session) {
+      return new NextResponse("Unauthorized", { status: 401 })
     }
     
-    const { serverId } = await params
+    const { serverId } = params
     
     // Check if user is a member of the server
     const serverMember = await prisma.serverMember.findFirst({
@@ -29,37 +30,45 @@ export async function GET(
       return NextResponse.json({ error: "Not a member of this server" }, { status: 403 })
     }
     
-    // Get all members with their user data
+    // Get members with their user information and status
     const members = await prisma.serverMember.findMany({
       where: {
-        serverId
+        serverId: params.serverId
       },
       include: {
         user: {
           select: {
             id: true,
             name: true,
-            email: true,
             image: true
           }
         }
       }
     })
-    
-    // Add status information (in a real app, this would come from a presence system)
-    // For now, we'll simulate online status for demonstration
-    const membersWithStatus = members.map(member => ({
-      ...member,
-      status: Math.random() > 0.3 ? "online" : "offline" // Simulate some users being offline
-    }))
-    
-    return NextResponse.json(membersWithStatus)
+
+    const userIds = members.map(m => m.userId);
+    const statuses = await prisma.userStatus.findMany({
+      where: { userId: { in: userIds } }
+    });
+    const statusMap = Object.fromEntries(statuses.map(s => [s.userId, s]));
+
+    // Format the response
+    const formattedMembers = members.map(member => {
+      const status = statusMap[member.userId];
+      return {
+        ...member,
+        user: {
+          ...member.user,
+          status: status?.status || "offline",
+          lastSeen: status?.lastSeen || member.joinedAt
+        }
+      }
+    });
+
+    return NextResponse.json(formattedMembers)
   } catch (error) {
     console.error("Error fetching server members:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch server members" },
-      { status: 500 }
-    )
+    return new NextResponse("Internal Error", { status: 500 })
   }
 }
 // POST /api/servers/[serverId]/members - Check if a user is a member of the server

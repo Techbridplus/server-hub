@@ -34,6 +34,8 @@ model User {
   comments      Comment[]      @relation("UserComments")
   eventComments EventComment[] @relation("EventCommentAuthor")
   commentLikes  CommentLike[]  @relation("CommentLikeUser")
+
+  userStatus    UserStatus?
 }
 
 model Account {
@@ -327,4 +329,12 @@ model ScheduledDeletion {
 
   @@index([serverId])
   @@index([userId])
+}
+
+model UserStatus {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @unique
+  status    String   @default("offline") // online, offline, idle, dnd
+  lastSeen  DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

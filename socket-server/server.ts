@@ -1,9 +1,11 @@
 import { createServer } from "http"
 import { Server } from "socket.io"
 import dotenv from "dotenv"
+import { PrismaClient } from "@prisma/client"
 
 dotenv.config()
 
+const prisma = new PrismaClient()
 const httpServer = createServer()
 const io = new Server(httpServer, {
   cors: {
@@ -50,12 +52,39 @@ interface CallEnded {
   to: string
 }
 
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
   const userId = socket.handshake.query.userId as string
   const serverId = socket.handshake.query.serverId as string
 
   if (userId) {
     socket.join(`user:${userId}`)
+    
+    // Update user status to online when they connect
+    await prisma.userStatus.upsert({
+      where: { userId },
+      update: { 
+        status: "online",
+        lastSeen: new Date()
+      },
+      create: {
+        userId,
+        status: "online",
+        lastSeen: new Date()
+      }
+    })
+
+    // Broadcast status update to all servers the user is in
+    const userServers = await prisma.serverMember.findMany({
+      where: { userId },
+      select: { serverId: true }
+    })
+
+    userServers.forEach(({ serverId }) => {
+      io.to(`server:${serverId}`).emit("memberStatusUpdate", {
+        userId,
+        status: "online"
+      })
+    })
   }
 
   if (serverId) {
@@ -63,7 +92,15 @@ io.on("connection", (socket) => {
   }
 
   // Handle member status updates
-  socket.on("memberStatusUpdate", (data: MemberStatusUpdate) => {
+  socket.on("memberStatusUpdate", async (data: MemberStatusUpdate) => {
+    await prisma.userStatus.update({
+      where: { userId: data.userId },
+      data: { 
+        status: data.status,
+        lastSeen: new Date()
+      }
+    })
+
     io.to(`server:${data.serverId}`).emit("memberStatusUpdate", {
       userId: data.userId,
       status: data.status
@@ -103,11 +140,28 @@ io.on("connection", (socket) => {
     io.to(`user:${data.to}`).emit("callEnded")
   })
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     if (userId) {
-      io.to(`server:${serverId}`).emit("memberStatusUpdate", {
-        userId,
-        status: "offline"
+      // Update user status to offline
+      await prisma.userStatus.update({
+        where: { userId },
+        data: { 
+          status: "offline",
+          lastSeen: new Date()
+        }
+      })
+
+      // Broadcast status update to all servers the user is in
+      const userServers = await prisma.serverMember.findMany({
+        where: { userId },
+        select: { serverId: true }
+      })
+
+      userServers.forEach(({ serverId }) => {
+        io.to(`server:${serverId}`).emit("memberStatusUpdate", {
+          userId,
+          status: "offline"
+        })
       })
     }
   })

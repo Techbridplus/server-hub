@@ -55,7 +55,7 @@ export function ChatDialog({
         (message.senderId === currentUserId && message.receiverId === otherUser.id)
       ) {
         setMessages((prev) => [...prev, message])
-        scrollToBottom()
+        setTimeout(scrollToBottom, 100)
       }
     })
 
@@ -100,7 +100,7 @@ export function ChatDialog({
       socket.emit("directMessage", response.data)
       setMessages((prev) => [...prev, response.data])
       setNewMessage("")
-      scrollToBottom()
+      setTimeout(scrollToBottom, 100)
     } catch (error) {
       console.error("Error sending message:", error)
       toast({
