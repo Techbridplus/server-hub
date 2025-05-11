@@ -16,12 +16,12 @@ import { useSession } from "next-auth/react"
 
 interface ChatInterfaceProps {
   group: any
-  currentUserId: string
+  userId: string
   isAdmin: boolean
-  defaultChannelId?: string
+  channelId?: string
 }
 
-export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId }: ChatInterfaceProps) {
+export function ChatInterface({ group, userId, isAdmin, channelId }: ChatInterfaceProps) {
   const router = useRouter()
   const params = useParams()
   const { toast } = useToast()
@@ -29,7 +29,7 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { data: session } = useSession()
 
-  const [activeChannel, setActiveChannel] = useState(defaultChannelId || "")
+  // const [channelId, setchannelId] = useState(channelId || "")
   const [messages, setMessages] = useState<any[]>([])
   const [messageInput, setMessageInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -37,16 +37,17 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
   const [onlineUsers, setOnlineUsers] = useState<{ [key: string]: boolean }>({})
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  console.log("channelId",channelId);
   // Get current user information
   const currentUser = {
-    id: currentUserId,
+    id: userId,
     name: session?.user?.name || "Unknown User",
     image: session?.user?.image || null,
   }
 
   // Fetch messages when channel changes
   useEffect(() => {
-    if (!activeChannel) return
+    if (!channelId) return
 
     // Clear messages when switching channels
     setMessages([])
@@ -55,7 +56,7 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
     const fetchMessages = async () => {
       try {
         const response = await fetch(
-          `/api/servers/${group.server.id}/groups/${group.id}/channels/${activeChannel}/messages`,
+          `/api/servers/${group.server.id}/groups/${group.id}/channels/${channelId}/messages`,
         )
         if (!response.ok) throw new Error("Failed to fetch messages")
 
@@ -85,16 +86,16 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
     fetchMessages()
 
     // Update URL without refreshing
-    router.push(`/group/${group.id}?channel=${activeChannel}`, { scroll: false })
-  }, [activeChannel, group.id, group.server.id, router, toast])
+    router.push(`/group/${group.id}?channel=${channelId}`, { scroll: false })
+  }, [channelId, group.id, group.server.id, router, toast])
 
   // Socket connection and event handlers
   useEffect(() => {
-    if (!socket || !activeChannel) return
+    if (!socket || !channelId) return
 
-    console.log("Joining channel:", activeChannel)
+    console.log("Joining channel:", channelId)
     // Join channel room
-    socket.emit("join-channel", activeChannel)
+    socket.emit("join-channel", channelId)
 
     // Listen for new messages
     const handleNewMessage = (message: any) => {
@@ -145,14 +146,14 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
 
     // Cleanup on unmount or channel change
     return () => {
-      console.log("Leaving channel:", activeChannel)
-      socket.emit("leave-channel", activeChannel)
+      console.log("Leaving channel:", channelId)
+      socket.emit("leave-channel", channelId)
       socket.off("new-message", handleNewMessage)
       socket.off("user-typing", handleUserTyping)
       socket.off("user-stopped-typing", handleUserStoppedTyping)
       socket.off("user-online", handleUserOnline)
     }
-  }, [socket, activeChannel])
+  }, [socket, channelId])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -161,7 +162,7 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
 
   // Handle typing indicator
   const handleTyping = () => {
-    if (!socket || !activeChannel) return
+    if (!socket || !channelId) return
 
     // Clear existing timeout
     if (typingTimeoutRef.current) {
@@ -170,14 +171,14 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
 
     // Emit typing start event
     socket.emit("typing-start", {
-      channelId: activeChannel,
+      channelId: channelId,
       user: currentUser
     })
 
     // Set new timeout to stop typing indicator
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit("typing-stop", {
-        channelId: activeChannel,
+        channelId: channelId,
         userId: currentUser.id
       })
       // Also clear local typing state
@@ -195,18 +196,18 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current)
       }
-      if (socket && activeChannel) {
+      if (socket && channelId) {
         socket.emit("typing-stop", {
-          channelId: activeChannel,
+          channelId: channelId,
           userId: currentUser.id
         })
       }
     }
-  }, [socket, activeChannel, currentUser.id])
+  }, [socket, channelId, currentUser.id])
 
   // Send message
   const sendMessage = async () => {
-    if (!messageInput.trim() || !socket || !activeChannel) return
+    if (!messageInput.trim() || !socket || !channelId) return
 
     // Optimistically add message to UI
     const optimisticMessage = {
@@ -225,14 +226,14 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
       clearTimeout(typingTimeoutRef.current)
     }
     socket.emit("typing-stop", {
-      channelId: activeChannel,
+      channelId: channelId,
       userId: currentUser.id
     })
 
     try {
       // Save message to database
       const response = await fetch(
-        `/api/servers/${group.server.id}/groups/${group.id}/channels/${activeChannel}/messages`,
+        `/api/servers/${group.server.id}/groups/${group.id}/channels/${channelId}/messages`,
         {
           method: "POST",
           headers: {
@@ -253,7 +254,7 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
 
       // Send message via socket
       socket.emit("send-message", {
-        channelId: activeChannel,
+        channelId: channelId,
         content: messageInput,
         user: currentUser,
         messageId: savedMessage.id
@@ -314,37 +315,37 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
                       </Button>
                     )}
                   </div>
-                  {textChannels.map((channel: any) => (
+                  {/* {textChannels.map((channel: any) => (
                     <button
                       key={channel.id}
                       className={cn(
                         "flex w-full items-center gap-x-2 rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-accent",
-                        activeChannel === channel.id && "bg-accent",
+                        channelId === channel.id && "bg-accent",
                       )}
-                      onClick={() => setActiveChannel(channel.id)}
+                      onClick={() => setchannelId(channel.id)}
                     >
                       <Hash className="h-4 w-4" />
                       <span>{channel.name}</span>
                     </button>
-                  ))}
+                  ))} */}
                 </div>
                 <div className="mb-2">
                   <div className="flex items-center justify-between px-2 py-1">
                     <h3 className="text-xs font-semibold uppercase text-muted-foreground">Voice Channels</h3>
                   </div>
-                  {voiceChannels.map((channel: any) => (
+                  {/* {voiceChannels.map((channel: any) => (
                     <button
                       key={channel.id}
                       className={cn(
                         "flex w-full items-center gap-x-2 rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-accent",
-                        activeChannel === channel.id && "bg-accent",
+                        channelId === channel.id && "bg-accent",
                       )}
-                      onClick={() => setActiveChannel(channel.id)}
+                      onClick={() => setchannelId(channel.id)}
                     >
                       <Volume2 className="h-4 w-4" />
                       <span>{channel.name}</span>
                     </button>
-                  ))}
+                  ))} */}
                 </div>
               </div>
             </ScrollArea>
@@ -381,7 +382,7 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
       {/* Main chat area */}
       <div className="flex flex-1 flex-col">
 
-        {activeChannel ? (
+        {channelId ? (
           <>
             <ScrollArea className="flex-1 p-4">
               {isLoading ? (
@@ -499,7 +500,7 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
                       clearTimeout(typingTimeoutRef.current)
                     }
                     socket?.emit("typing-stop", {
-                      channelId: activeChannel,
+                      channelId: channelId,
                       userId: currentUser.id
                     })
                     setTypingUsers((prev) => {

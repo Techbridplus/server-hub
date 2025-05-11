@@ -102,7 +102,7 @@ export default function GroupPage() {
     }
     
     fetchGroupData()
-  }, [groupId, channelId, toast, router])
+  }, [groupId, toast, router])
   
   // Handle direct message
   const handleDirectMessage = (user: any) => {
@@ -396,9 +396,9 @@ export default function GroupPage() {
           {channelId ? (
             <ChatInterface 
               group={group} 
-              currentUserId={session?.user?.id || ""} 
+              userId={session?.user?.id || ""} 
               isAdmin={isAdmin} 
-              defaultChannelId={channelId} 
+              channelId={channelId} 
             />
 
           ) : (
