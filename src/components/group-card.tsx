@@ -216,14 +216,14 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
       return
     }
 
-    if (!isServerMember) {
-      toast({
-        title: "Error",
-        description: "You need to be a member of the server to join this group",
-        variant: "destructive",
-      })
-      return
-    }
+    // if (!isServerMember) {
+    //   toast({
+    //     title: "Error",
+    //     description: "You need to be a member of the server to join this group",
+    //     variant: "destructive",
+    //   })
+    //   return
+    // }
 
     setIsJoining(true)
 
