@@ -59,7 +59,7 @@ export default function ServerPage() {
   const { toast } = useToast()
   const params = useParams<{ serverId: string }>();
   const serverId = params.serverId
-
+ 
   // State for private server access
   const [hasAccess, setHasAccess] = useState(false)
   const [showAccessDialog, setShowAccessDialog] = useState(false)

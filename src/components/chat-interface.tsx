@@ -12,22 +12,24 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { PlusCircle, Hash, Volume2, Settings, Users, Menu, Send, Paperclip, Smile } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { useSession } from "next-auth/react"
 
 interface ChatInterfaceProps {
   group: any
-  currentUserId: string
+  userId: string
   isAdmin: boolean
-  defaultChannelId?: string
+  channelId?: string
 }
 
-export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId }: ChatInterfaceProps) {
+export function ChatInterface({ group, userId, isAdmin, channelId }: ChatInterfaceProps) {
   const router = useRouter()
   const params = useParams()
   const { toast } = useToast()
   const socket = useSocket()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { data: session } = useSession()
 
-  const [activeChannel, setActiveChannel] = useState(defaultChannelId || "")
+  // const [channelId, setchannelId] = useState(channelId || "")
   const [messages, setMessages] = useState<any[]>([])
   const [messageInput, setMessageInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -35,20 +37,40 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
   const [onlineUsers, setOnlineUsers] = useState<{ [key: string]: boolean }>({})
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  console.log("channelId",channelId);
+  // Get current user information
+  const currentUser = {
+    id: userId,
+    name: session?.user?.name || "Unknown User",
+    image: session?.user?.image || null,
+  }
+
   // Fetch messages when channel changes
   useEffect(() => {
-    if (!activeChannel) return
+    if (!channelId) return
+
+    // Clear messages when switching channels
+    setMessages([])
+    setIsLoading(true)
 
     const fetchMessages = async () => {
-      setIsLoading(true)
       try {
         const response = await fetch(
-          `/api/servers/${group.server.id}/groups/${group.id}/channels/${activeChannel}/messages`,
+          `/api/servers/${group.server.id}/groups/${group.id}/channels/${channelId}/messages`,
         )
         if (!response.ok) throw new Error("Failed to fetch messages")
 
         const data = await response.json()
-        setMessages(data.messages || [])
+        // Format messages to include author information
+        const formattedMessages = data.messages.map((message: any) => ({
+          ...message,
+          user: {
+            id: message.userId,
+            name: message.user?.name || "Unknown User",
+            image: message.user?.image || null,
+          }
+        }))
+        setMessages(formattedMessages || [])
       } catch (error) {
         console.error("Error fetching messages:", error)
         toast({
@@ -64,27 +86,46 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
     fetchMessages()
 
     // Update URL without refreshing
-    router.push(`/group/${group.id}?channel=${activeChannel}`, { scroll: false })
-  }, [activeChannel, group.id, group.server.id, router, toast])
+    router.push(`/group/${group.id}?channel=${channelId}`, { scroll: false })
+  }, [channelId, group.id, group.server.id, router, toast])
 
   // Socket connection and event handlers
   useEffect(() => {
-    if (!socket || !activeChannel) return
+    if (!socket || !channelId) return
 
+    console.log("Joining channel:", channelId)
     // Join channel room
-    socket.emit("join-channel", activeChannel)
+    socket.emit("join-channel", channelId)
 
     // Listen for new messages
     const handleNewMessage = (message: any) => {
-      setMessages((prev) => [...prev, message])
+      console.log("Received new message:", message)
+      setMessages((prev) => {
+        // Remove optimistic message if it exists
+        const filteredMessages = prev.filter(m => !m.isOptimistic)
+        
+        // Structure the message to match the UI expectations
+        const formattedMessage = {
+          ...message,
+          user: message.user || {
+            id: message.userId,
+            name: message.user?.name || "Unknown User",
+            image: message.user?.image || null,
+          }
+        }
+        
+        return [...filteredMessages, formattedMessage]
+      })
     }
 
     // Listen for typing indicators
     const handleUserTyping = (data: { userId: string; username: string }) => {
+      console.log("User typing:", data)
       setTypingUsers((prev) => ({ ...prev, [data.userId]: data.username }))
     }
 
     const handleUserStoppedTyping = (data: { userId: string }) => {
+      console.log("User stopped typing:", data)
       setTypingUsers((prev) => {
         const newState = { ...prev }
         delete newState[data.userId]
@@ -105,13 +146,14 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
 
     // Cleanup on unmount or channel change
     return () => {
-      socket.emit("leave-channel", activeChannel)
+      console.log("Leaving channel:", channelId)
+      socket.emit("leave-channel", channelId)
       socket.off("new-message", handleNewMessage)
       socket.off("user-typing", handleUserTyping)
       socket.off("user-stopped-typing", handleUserStoppedTyping)
       socket.off("user-online", handleUserOnline)
     }
-  }, [socket, activeChannel])
+  }, [socket, channelId])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -120,52 +162,121 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
 
   // Handle typing indicator
   const handleTyping = () => {
-    if (!socket || !activeChannel) return
-
-    socket.emit("typing-start", activeChannel)
+    if (!socket || !channelId) return
 
     // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current)
     }
 
-    // Set new timeout
+    // Emit typing start event
+    socket.emit("typing-start", {
+      channelId: channelId,
+      user: currentUser
+    })
+
+    // Set new timeout to stop typing indicator
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit("typing-stop", activeChannel)
-    }, 3000)
+      socket.emit("typing-stop", {
+        channelId: channelId,
+        userId: currentUser.id
+      })
+      // Also clear local typing state
+      setTypingUsers((prev) => {
+        const newState = { ...prev }
+        delete newState[currentUser.id]
+        return newState
+      })
+    }, 2000) // Reduced timeout to 2 seconds
   }
+
+  // Cleanup typing indicator when component unmounts or channel changes
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+      if (socket && channelId) {
+        socket.emit("typing-stop", {
+          channelId: channelId,
+          userId: currentUser.id
+        })
+      }
+    }
+  }, [socket, channelId, currentUser.id])
 
   // Send message
   const sendMessage = async () => {
-    if (!messageInput.trim() || !socket || !activeChannel) return
+    if (!messageInput.trim() || !socket || !channelId) return
 
     // Optimistically add message to UI
     const optimisticMessage = {
       id: `temp-${Date.now()}`,
       content: messageInput,
       createdAt: new Date().toISOString(),
-      author: {
-        id: currentUserId,
-        name: "You", // This will be replaced when the real message comes back
-        image: null,
-      },
+      user: currentUser,
       isOptimistic: true,
     }
 
-    setMessages((prev) => [...prev, optimisticMessage])
-    setMessageInput("")
+    // setMessages((prev) => [...prev, optimisticMessage])
+    // setMessageInput("")
 
     // Clear typing indicator
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current)
     }
-    socket.emit("typing-stop", activeChannel)
-
-    // Send message via socket
-    socket.emit("send-message", {
-      channelId: activeChannel,
-      content: messageInput,
+    socket.emit("typing-stop", {
+      channelId: channelId,
+      userId: currentUser.id
     })
+
+    try {
+      // Save message to database
+      const response = await fetch(
+        `/api/servers/${group.server.id}/groups/${group.id}/channels/${channelId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: messageInput,
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error("Failed to save message")
+      }
+
+      const savedMessage = await response.json()
+      console.log("Message saved:", savedMessage)
+
+      // Send message via socket
+      socket.emit("send-message", {
+        channelId: channelId,
+        content: messageInput,
+        user: currentUser,
+        messageId: savedMessage.id
+      })
+
+      // Update optimistic message with saved message
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.isOptimistic ? { ...savedMessage, user: currentUser } : msg
+        )
+      )
+      setMessageInput("")
+    } catch (error) {
+      console.error("Error sending message:", error)
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      })
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter((msg) => !msg.isOptimistic))
+    }
   }
 
   // Group channels by type
@@ -204,37 +315,37 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
                       </Button>
                     )}
                   </div>
-                  {textChannels.map((channel: any) => (
+                  {/* {textChannels.map((channel: any) => (
                     <button
                       key={channel.id}
                       className={cn(
                         "flex w-full items-center gap-x-2 rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-accent",
-                        activeChannel === channel.id && "bg-accent",
+                        channelId === channel.id && "bg-accent",
                       )}
-                      onClick={() => setActiveChannel(channel.id)}
+                      onClick={() => setchannelId(channel.id)}
                     >
                       <Hash className="h-4 w-4" />
                       <span>{channel.name}</span>
                     </button>
-                  ))}
+                  ))} */}
                 </div>
                 <div className="mb-2">
                   <div className="flex items-center justify-between px-2 py-1">
                     <h3 className="text-xs font-semibold uppercase text-muted-foreground">Voice Channels</h3>
                   </div>
-                  {voiceChannels.map((channel: any) => (
+                  {/* {voiceChannels.map((channel: any) => (
                     <button
                       key={channel.id}
                       className={cn(
                         "flex w-full items-center gap-x-2 rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-accent",
-                        activeChannel === channel.id && "bg-accent",
+                        channelId === channel.id && "bg-accent",
                       )}
-                      onClick={() => setActiveChannel(channel.id)}
+                      onClick={() => setchannelId(channel.id)}
                     >
                       <Volume2 className="h-4 w-4" />
                       <span>{channel.name}</span>
                     </button>
-                  ))}
+                  ))} */}
                 </div>
               </div>
             </ScrollArea>
@@ -271,7 +382,7 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
       {/* Main chat area */}
       <div className="flex flex-1 flex-col">
 
-        {activeChannel ? (
+        {channelId ? (
           <>
             <ScrollArea className="flex-1 p-4">
               {isLoading ? (
@@ -286,27 +397,44 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
                 <div className="space-y-4">
                   {messages.map((message, index) => {
                     // Group consecutive messages from the same author
-                    const isConsecutive = index > 0 && messages[index - 1].author.id === message.author.id
+                    const isConsecutive = index > 0 && messages[index - 1].user.id === message.user.id
+                    const showAvatar = !isConsecutive
 
                     return (
-                      <div key={message.id} className={cn("flex items-start gap-x-3", isConsecutive && "mt-1")}>
-                        {!isConsecutive && (
-                          <Avatar className="h-8 w-8 mt-0.5">
-                            <AvatarImage src={message.author.image || undefined} />
-                            <AvatarFallback>{message.author.name?.charAt(0) || "U"}</AvatarFallback>
-                          </Avatar>
+                      <div 
+                        key={message.id} 
+                        className={cn(
+                          "flex items-start gap-x-3",
+                          isConsecutive && "mt-1",
+                          !isConsecutive && "mt-4"
                         )}
-                        {isConsecutive && <div className="w-8" />}
-                        <div>
+                      >
+                        {showAvatar ? (
+                          <Avatar className="h-8 w-8 mt-0.5">
+                            <AvatarImage 
+                              src={message.user.image || undefined} 
+                              alt={message.user.name}
+                            />
+                            <AvatarFallback>
+                              {message.user.name?.charAt(0)?.toUpperCase() || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <div className="w-8" />
+                        )}
+                        <div className="flex-1">
                           {!isConsecutive && (
                             <div className="flex items-center gap-x-2">
-                              <p className="text-sm font-semibold">{message.author.name}</p>
+                              <p className="text-sm font-semibold">{message.user.name}</p>
                               <span className="text-xs text-muted-foreground">
                                 {new Date(message.createdAt).toLocaleTimeString()}
                               </span>
                             </div>
                           )}
-                          <p className={cn("text-sm", message.isOptimistic && "text-muted-foreground italic")}>
+                          <p className={cn(
+                            "text-sm",
+                            message.isOptimistic && "text-muted-foreground italic"
+                          )}>
                             {message.content}
                           </p>
                           {message.attachments?.length > 0 && (
@@ -331,9 +459,19 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
 
               {/* Typing indicator */}
               {Object.keys(typingUsers).length > 0 && (
-                <div className="mt-2 text-xs text-muted-foreground">
-                  {Object.values(typingUsers).join(", ")} {Object.keys(typingUsers).length === 1 ? "is" : "are"}{" "}
-                  typing...
+                <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    {Object.entries(typingUsers).map(([userId, username], index, array) => (
+                      <span key={userId}>
+                        {username}
+                        {index < array.length - 2 ? ", " : index === array.length - 2 ? " and " : ""}
+                      </span>
+                    ))}
+                  </div>
+                  <span>
+                    {Object.keys(typingUsers).length === 1 ? "is" : "are"} typing
+                    <span className="animate-pulse">...</span>
+                  </span>
                 </div>
               )}
             </ScrollArea>
@@ -346,13 +484,30 @@ export function ChatInterface({ group, currentUserId, isAdmin, defaultChannelId 
                 </Button>
                 <Textarea
                   value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
+                  onChange={(e) => {
+                    setMessageInput(e.target.value)
+                    handleTyping()
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault()
                       sendMessage()
                     }
-                    handleTyping()
+                  }}
+                  onBlur={() => {
+                    // Clear typing indicator when input loses focus
+                    if (typingTimeoutRef.current) {
+                      clearTimeout(typingTimeoutRef.current)
+                    }
+                    socket?.emit("typing-stop", {
+                      channelId: channelId,
+                      userId: currentUser.id
+                    })
+                    setTypingUsers((prev) => {
+                      const newState = { ...prev }
+                      delete newState[currentUser.id]
+                      return newState
+                    })
                   }}
                   placeholder="Type a message..."
                   className="min-h-10 flex-1 resize-none"

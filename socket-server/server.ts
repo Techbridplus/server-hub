@@ -14,42 +14,12 @@ const io = new Server(httpServer, {
   }
 })
 
-interface MemberStatusUpdate {
-  userId: string
-  status: "online" | "offline" | "idle" | "dnd"
-  serverId: string
-}
-
-interface MemberRoleUpdate {
-  memberId: string
-  role: "ADMIN" | "MODERATOR" | "MEMBER"
-  serverId: string
-}
-
-interface MemberKicked {
-  memberId: string
-  serverId: string
-}
-
 interface DirectMessage {
   id: string
   content: string
   senderId: string
   receiverId: string
   createdAt: string
-}
-
-interface CallSignal {
-  type: "offer" | "answer" | "candidate"
-  offer?: any
-  answer?: any
-  candidate?: any
-  to: string
-  from?: string
-}
-
-interface CallEnded {
-  to: string
 }
 
 io.on("connection", async (socket) => {
@@ -91,53 +61,61 @@ io.on("connection", async (socket) => {
     socket.join(`server:${serverId}`)
   }
 
-  // Handle member status updates
-  socket.on("memberStatusUpdate", async (data: MemberStatusUpdate) => {
-    await prisma.userStatus.update({
-      where: { userId: data.userId },
-      data: { 
-        status: data.status,
-        lastSeen: new Date()
-      }
-    })
-
-    io.to(`server:${data.serverId}`).emit("memberStatusUpdate", {
-      userId: data.userId,
-      status: data.status
-    })
-  })
-
-  // Handle member role updates
-  socket.on("memberRoleUpdate", (data: MemberRoleUpdate) => {
-    io.to(`server:${data.serverId}`).emit("memberRoleUpdate", {
-      memberId: data.memberId,
-      role: data.role
-    })
-  })
-
-  // Handle member kicks
-  socket.on("memberKicked", (data: MemberKicked) => {
-    io.to(`server:${data.serverId}`).emit("memberKicked", {
-      memberId: data.memberId
-    })
-  })
-
   // Handle direct messages
   socket.on("directMessage", (message: DirectMessage) => {
     io.to(`user:${message.receiverId}`).emit("directMessage", message)
   })
 
-  // Handle call signals
-  socket.on("callSignal", (data: CallSignal) => {
-    io.to(`user:${data.to}`).emit("callSignal", {
-      ...data,
-      from: userId
+  // Handle channel joining
+  socket.on("join-channel", (channelId: string) => {
+    socket.join(`channel:${channelId}`)
+    console.log(`User ${userId} joined channel ${channelId}`)
+  })
+
+  // Handle channel leaving
+  socket.on("leave-channel", (channelId: string) => {
+    socket.leave(`channel:${channelId}`)
+    console.log(`User ${userId} left channel ${channelId}`)
+  })
+
+  // Handle typing start
+  socket.on("typing-start", (data: { channelId: string, user: { id: string, name: string } }) => {
+    socket.to(`channel:${data.channelId}`).emit("user-typing", {
+      userId: data.user.id,
+      username: data.user.name
     })
   })
 
-  // Handle call ended
-  socket.on("callEnded", (data: CallEnded) => {
-    io.to(`user:${data.to}`).emit("callEnded")
+  // Handle typing stop
+  socket.on("typing-stop", (data: { channelId: string, userId: string }) => {
+    socket.to(`channel:${data.channelId}`).emit("user-stopped-typing", {
+      userId: data.userId
+    })
+  })
+
+  // Handle channel messages
+  socket.on("send-message", async (data: { 
+    channelId: string, 
+    content: string,
+    user: {
+      id: string,
+      name: string,
+      image: string | null
+    },
+    messageId: string
+  }) => {
+    console.log("Received message:", data)
+    const message = {
+      id: data.messageId,
+      content: data.content,
+      channelId: data.channelId,
+      userId: data.user.id,
+      user: data.user,
+      createdAt: new Date().toISOString()
+    }
+    
+    io.to(`channel:${data.channelId}`).emit("new-message", message)
+    console.log(`Broadcasting message to channel ${data.channelId}`)
   })
 
   socket.on("disconnect", async () => {
