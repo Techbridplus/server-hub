@@ -16,6 +16,7 @@ import { useSession } from "next-auth/react"
 import { useInView } from "react-intersection-observer"
 import axios from "axios"
 import ServerSidebar from "@/components/server-sidebar"
+import NotificationSystem from "@/components/notification-system"
 
 interface Server {
   id: string
@@ -389,13 +390,14 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-2 ">
               <ThemeToggle />
               <ColorSchemeSelector />
-              <Button variant="ghost" size="icon">
+              {/* <Button variant="ghost" size="icon">
                 <Bell className="h-5 w-5" />
                 <span className="sr-only">Notifications</span>
-              </Button>
+              </Button> */}
+              <NotificationSystem />
               <CreateServerModal
                 className="hidden md:flex justify-start gap-2 h-9"
               />
