@@ -1,13 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter, isGroupAdmin } from "@/lib/auth"
-//import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 
 // GET /api/servers/[serverId]/groups/[groupId]/channels/[channelId] - Get channel details
 export async function GET(
   req: NextRequest,
   { params }: { params: { serverId: string; groupId: string; channelId: string } },
 ) {
-const prisma = {};
+
   try {
     const { serverId, groupId, channelId } = params
 
@@ -60,7 +60,7 @@ export async function PUT(
         },
         data: {
           name,
-          isPrivate,
+  
         },
       })
 

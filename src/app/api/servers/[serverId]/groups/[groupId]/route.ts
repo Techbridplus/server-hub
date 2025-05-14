@@ -1,11 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter, isGroupAdmin } from "@/lib/auth"
-//import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
+
 import { isServerAdmin } from "@/lib/auth"
 
-//const prisma = new PrismaClient()
 
-const prisma = {};
+
+
 
 // GET /api/servers/[serverId]/groups/[groupId] - Get group details
 export async function GET(req: NextRequest, { params }: { params: { serverId: string; groupId: string } }) {
@@ -19,13 +20,6 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
         serverId,
       },
       include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
         members: {
           include: {
             user: {
@@ -109,9 +103,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { serverId:
           id: groupId,
           serverId,
         },
-        select: {
-          ownerId: true,
-        },
+
       })
 
       if (!group) {
@@ -119,7 +111,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { serverId:
       }
 
       // Check if user is group owner
-      if (group.ownerId !== session.user.id) {
+   
         // Check if user is server admin
         const isAdmin = await isServerAdmin(session.user.id, serverId)
         if (!isAdmin) {
@@ -128,7 +120,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { serverId:
             { status: 403 },
           )
         }
-      }
+      
 
       // Delete group
       await prisma.group.delete({

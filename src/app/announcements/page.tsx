@@ -1,28 +1,23 @@
 import { Suspense } from "react"
 import { AnnouncementCard } from "@/components/announcement-card"
-import { prisma } from "@/lib/prisma"
+import { Announcement } from "@prisma/client";
+import axios from "axios"
 
-async function getAnnouncements() {
-  const announcements = await prisma.announcement.findMany({
-    include: {
-      author: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  })
-
-  return announcements
+interface AnnouncementWithAuthor extends Announcement {
+  author: {
+    id: string
+    name: string
+    image: string
+  }
+  _count: {
+    likes: number
+    comments: number
+  }
 }
 
+
 export default async function AnnouncementsPage() {
-  const announcements = await getAnnouncements()
+  const { data: announcements } = await axios.get("/api/announcements");
 
   return (
     <div className="container mx-auto py-8">
@@ -31,7 +26,7 @@ export default async function AnnouncementsPage() {
         {announcements.length === 0 ? (
           <p className="text-center text-gray-500">No announcements yet.</p>
         ) : (
-          announcements.map((announcement) => (
+          announcements.map((announcement:AnnouncementWithAuthor) => (
             <AnnouncementCard key={announcement.id} announcement={announcement} />
           ))
         )}

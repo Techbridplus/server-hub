@@ -22,6 +22,7 @@ interface DirectMessage {
   createdAt: string
 }
 
+//inbuilt connection
 io.on("connection", async (socket) => {
   const userId = socket.handshake.query.userId as string
   const serverId = socket.handshake.query.serverId as string

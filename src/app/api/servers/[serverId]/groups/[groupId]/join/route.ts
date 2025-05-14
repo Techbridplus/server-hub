@@ -29,12 +29,10 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
       }
 
       // Check if user is already a member
-      const existingMembership = await prisma.groupMember.findUnique({
+      const existingMembership = await prisma.groupMember.findFirst({
         where: {
-          userId_groupId: {
             userId: session.user.id,
             groupId,
-          },
         },
       })
 
@@ -60,7 +58,7 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
               id: groupId,
             },
           },
-          role: "member",
+          role: "MEMBER",
         },
       })
 

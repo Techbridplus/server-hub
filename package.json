@@ -12,6 +12,7 @@
     "start:server": "NODE_ENV=production node dist/server.js"
   },
   "dependencies": {
+    "@ai-sdk/react": "^1.2.12",
     "@auth/prisma-adapter": "^2.8.0",
     "@hookform/resolvers": "latest",
     "@prisma/client": "latest",

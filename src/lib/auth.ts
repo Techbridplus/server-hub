@@ -219,3 +219,24 @@ export async function isServerAdmin(userId: string, serverId: string): Promise<b
   return server?.ownerId === userId;
 }
 
+export async function isServerMember(userId: string, serverId: string): Promise<boolean> {
+  const member = await prisma.serverMember.findFirst({
+    where: {
+      userId,
+      serverId,
+    },
+  });
+  return !!member;
+}
+
+export async function isGroupAdmin(userId: string, groupId: string): Promise<boolean> {
+  const member = await prisma.groupMember.findFirst({
+    where: {
+      userId,
+      groupId,
+      role: "ADMIN",
+    },
+  });
+  return !!member;
+}
+
