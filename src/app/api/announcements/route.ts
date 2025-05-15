@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/announcements - Create a new announcement
 export async function POST(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { title, content, isImportant, serverId } = await req.json()
 

@@ -193,9 +193,9 @@ async function verify2FACode(userId: string, code: string): Promise<boolean> {
   })
 }
 
-type HandlerFunction = (req: NextRequest, session: any, prisma: PrismaClient) => Promise<NextResponse>
+type HandlerFunction = ( session: any) => Promise<NextResponse>
 
-export async function authMiddlewareAppRouter(req: NextRequest, handler: HandlerFunction) {
+export async function authMiddlewareAppRouter( handler: HandlerFunction) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -203,7 +203,7 @@ export async function authMiddlewareAppRouter(req: NextRequest, handler: Handler
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    return handler(req, session, prisma)
+    return handler(session)
   } catch (error) {
     console.error("Auth middleware error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

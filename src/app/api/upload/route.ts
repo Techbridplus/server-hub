@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter } from "@/lib/auth"
 import { put, del } from "@vercel/blob" // Import the correct method for deletion
+import { console } from "inspector"
 
 // POST /api/upload - Upload a file
 export async function POST(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
+      console.log(session)
       const formData = await req.formData()
       const file = formData.get("file") as File
       const type = formData.get("type") as string
@@ -57,8 +59,9 @@ export async function POST(req: NextRequest) {
 
 // DELETE /api/upload - Remove a file
 export async function DELETE(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
+      console.log(session)
       const { url } = await req.json();
 
       if (!url) {

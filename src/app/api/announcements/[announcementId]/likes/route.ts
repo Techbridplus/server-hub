@@ -38,7 +38,7 @@ export async function GET(req: NextRequest, { params }: { params: { announcement
 // POST /api/announcements/[announcementId]/likes - Toggle like on an announcement
 export async function POST(req: NextRequest, { params }: { params: { announcementId: string } }) {
   const {announcementId} = await params
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const existingLike = await prisma.like.findUnique({
         where: {

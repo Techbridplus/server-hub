@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter } from "@/lib/auth"
+import prisma from "@/lib/prisma"
 
 // GET /api/users/me - Get current user profile
 export async function GET(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       // Get user profile
       const user = await prisma.user.findUnique({
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
 
 // PUT /api/users/me - Update current user profile
 export async function PUT(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { name, bio, image } = await req.json()
 

@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+// import { getServerSession } from "next-auth"
+// import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { isServerAdmin, authMiddlewareAppRouter } from "@/lib/auth"
-import { use } from "react"
+// import { use } from "react"
 
 // GET /api/servers/[serverId]/events/[eventId] - Get event details
 export async function GET(
   request: NextRequest,
   { params }: { params: { serverId: string; eventId: string } }
 ) {
-  return authMiddlewareAppRouter(request, async (req, session, prisma) => {
+  return authMiddlewareAppRouter( async (session) => {
+    console.log(session)
     try {
       const { serverId, eventId } = await params;
 
@@ -72,7 +73,7 @@ export async function GET(
 
 // PUT /api/servers/[serverId]/events/[eventId] - Update event
 export async function PUT(req: NextRequest, { params }: { params: { serverId: string; eventId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async ( session) => {
     try {
       const { serverId, eventId } = params
       const { title, description, location, startDate, endDate, imageUrl, isExclusive } = await req.json()
@@ -127,7 +128,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { serverId: string; eventId: string } }
 ) {
-  return authMiddlewareAppRouter(request, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { serverId, eventId } = params;
 

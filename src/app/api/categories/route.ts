@@ -15,7 +15,7 @@ interface CategoryInfo {
 }
 
 // GET /api/categories - Get all unique categories with their server counts
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // Get all servers to extract unique categories
     const servers = await prisma.server.findMany({
@@ -55,8 +55,10 @@ export async function GET(req: NextRequest) {
 
 // GET /api/categories/[category]/servers - Get servers for a specific category (protected route)
 export async function GET_SERVERS(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
+      console.log("Session:", session)
+
       const category = req.url.split("/").pop()?.split("?")[0]
       
       if (!category) {

@@ -4,7 +4,7 @@ import { authMiddlewareAppRouter } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 
 export async function GET(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const user = await prisma.user.findUnique({
         where: { id: session.user.id },
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const body = await req.json()
       const { name, email, bio } = body

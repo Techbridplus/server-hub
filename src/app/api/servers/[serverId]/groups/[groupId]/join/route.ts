@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter, isServerMember } from "@/lib/auth"
+import prisma from "@/lib/prisma"
 
 // POST /api/servers/[serverId]/groups/[groupId]/join - Join a group
 export async function POST(req: NextRequest, { params }: { params: { serverId: string; groupId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { serverId, groupId } = params
 

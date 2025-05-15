@@ -52,7 +52,7 @@ export async function GET(req: NextRequest, { params }: { params: { announcement
 // POST /api/announcements/[announcementId]/comments - Create a new comment
 export async function POST(req: NextRequest, { params }: { params: { announcementId: string } }) {
   const {announcementId} = await params
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { content } = await req.json()
 

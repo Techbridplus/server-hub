@@ -7,8 +7,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { serverId: string; eventId: string; commentId: string } }
 ) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
+      console.log(req)
       const { serverId, eventId, commentId } = params
 
       // Check if user is server member

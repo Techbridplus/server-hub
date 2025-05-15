@@ -38,7 +38,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { serverId: string; groupId: string; channelId: string } },
 ) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async ( session) => {
     try {
       const { serverId, groupId, channelId } = params
       const { name, isPrivate } = await req.json()
@@ -77,7 +77,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { serverId: string; groupId: string; channelId: string } },
 ) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { serverId, groupId, channelId } = params
 

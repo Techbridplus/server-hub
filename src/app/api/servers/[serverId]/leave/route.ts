@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter } from "@/lib/auth"
+import prisma from "@/lib/prisma"
 
 // POST /api/servers/[serverId]/leave - Leave a server
 export async function POST(req: NextRequest, { params }: { params: { serverId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { serverId } = params
 

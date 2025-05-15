@@ -35,9 +35,9 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
 
 // POST /api/servers/[serverId]/groups/[groupId]/channels - Create a new channel
 export async function POST(req: NextRequest, { params }: { params: { serverId: string; groupId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async ( session) => {
     try {
-      const { serverId, groupId } = await params
+      const { serverId, groupId } = params
 
       if (!serverId || !groupId) {
         return NextResponse.json({ error: "Server ID and Group ID are required" }, { status: 400 })

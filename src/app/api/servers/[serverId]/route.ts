@@ -6,9 +6,9 @@ import { Server, Announcement } from "@prisma/client"
 
 // GET /api/servers/[serverId] - Get server details
 export async function GET(req: NextRequest, { params }: { params: { serverId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
-      const {serverId}  =  await Promise.resolve(params)
+      const { serverId } = await Promise.resolve(params)
       const userId = session.user.id
 
       // First check if the server exists
@@ -145,7 +145,7 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
 
 // PUT /api/servers/[serverId] - Update server
 export async function PUT(req: NextRequest, { params }: { params: { serverId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       // Ensure params is properly awaited
       const { serverId } = await Promise.resolve(params)
@@ -203,7 +203,7 @@ export async function PUT(req: NextRequest, { params }: { params: { serverId: st
 
 // DELETE /api/servers/[serverId] - Delete server
 export async function DELETE(req: NextRequest, { params }: { params: { serverId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       // Ensure params is properly awaited
       const { serverId } = await Promise.resolve(params)
