@@ -45,7 +45,7 @@ export function LinkAccountModal({ isOpen, onClose, email, provider }: LinkAccou
           callbackUrl: "/",
         })
       }
-    } catch (error) {
+    } catch {
       setError("An unexpected error occurred")
     } finally {
       setIsLoading(false)
@@ -96,4 +96,4 @@ export function LinkAccountModal({ isOpen, onClose, email, provider }: LinkAccou
       </DialogContent>
     </Dialog>
   )
-} 
+}

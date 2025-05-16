@@ -5,7 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import {
@@ -47,7 +47,6 @@ export function ServerCard({
   isAdmin,
   isJoined = false,
   featured = false,
-  layout = "modern",
   onJoin,
 }: ServerCardProps) {
   const [isJoining, setIsJoining] = useState(false);

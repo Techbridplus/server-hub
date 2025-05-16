@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Users, Search, Shield, UserMinus, UserCheck, MoreHorizontal, MessageSquare, Video, Phone } from "lucide-react"
+import { Users, Search, Shield, UserMinus, MoreHorizontal, MessageSquare, Video, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -14,12 +14,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ServerMember, User } from "@prisma/client"
 import { useToast } from "@/components/ui/use-toast"
-import { Socket } from "socket.io-client"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { ChatDialog } from "@/components/chat-dialog"
@@ -28,13 +26,13 @@ import { formatDistanceToNow } from "date-fns"
 import { initSocket, getSocket, disconnectSocket } from "@/lib/socket-client"
 
 interface MembersDialogProps {
-  serverId: string
+  serverId: string;
 }
 
 interface MemberWithUser extends ServerMember {
-  user: User
-  status: "online" | "offline" | "idle" | "dnd"
-  lastSeen?: Date
+  user: User;
+  status: "online" | "offline" | "idle" | "dnd";
+  lastSeen?: Date;
 }
 
 export function MembersDialog({ serverId }: MembersDialogProps) {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useSocket } from "@/hooks/use-socket"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { PlusCircle, Hash, Volume2, Settings, Users, Menu, Send, Paperclip, Smile } from "lucide-react"
+import { PlusCircle, Settings, Menu, Send, Paperclip, Smile } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { useSession } from "next-auth/react"
@@ -23,7 +23,6 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ group, userId, isAdmin, channelId }: ChatInterfaceProps) {
   const router = useRouter()
-  const params = useParams()
   const { toast } = useToast()
   const socket = useSocket()
   const messagesEndRef = useRef<HTMLDivElement>(null)

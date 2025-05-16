@@ -39,7 +39,7 @@ export default function PastEventsPage() {
         setEvents(data.events)
       }
       setHasMore(data.hasMore)
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to load past events. Please try again.",

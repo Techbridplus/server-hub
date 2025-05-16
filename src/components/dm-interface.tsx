@@ -765,7 +765,7 @@ export default function ChatPage() {
             <div className="aspect-video bg-slate-800 rounded-lg overflow-hidden flex items-center justify-center">
               <div className="text-slate-400">
                 <VideoIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p className="text-center text-sm">{activeConversation.name}'s video</p>
+                <p className="text-center text-sm">{activeConversation.name}&apos;s video</p>
               </div>
             </div>
             <div className="absolute bottom-4 right-4 w-1/3 aspect-video bg-slate-700 rounded-lg overflow-hidden border-2 border-white dark:border-slate-950 shadow-lg flex items-center justify-center">
@@ -877,6 +877,13 @@ function ConversationsSidebar({
               {conversations.map((conversation) => {
                 const isActive = activeConversation.id === conversation.id
 
+                function formatConversationTime(timestamp: Date): React.ReactNode {
+                  if (typeof timestamp === "string") {
+                    timestamp = new Date(timestamp)
+                  }
+                  throw new Error("Function not implemented.")
+                }
+
                 return (
                   <button
                     key={conversation.id}
@@ -951,24 +958,4 @@ function ConversationsSidebar({
       </div>
     </div>
   )
-}
-
-// Format conversation timestamp helper
-function formatConversationTime(date: Date) {
-  const now = new Date()
-  const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-
-  if (diffInDays === 0) {
-    return new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      minute: "numeric",
-      hour12: true,
-    }).format(date)
-  } else if (diffInDays === 1) {
-    return "Yesterday"
-  } else if (diffInDays < 7) {
-    return date.toLocaleDateString("en-US", { weekday: "short" })
-  } else {
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-  }
 }

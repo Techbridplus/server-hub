@@ -6,35 +6,24 @@ import { useSession } from "next-auth/react"
 import { useSocket } from "@/hooks/use-socket"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { MemberRole } from "@prisma/client"
 import { 
   Users, 
   Hash, 
-  Video, 
-  Phone, 
   Settings, 
   Menu, 
   PlusCircle, 
   Send, 
-  Paperclip, 
-  Smile, 
-  MoreVertical, 
-  Shield, 
-  User, 
-  X, 
-  UserPlus, 
+  X,
   ArrowLeft,
   Bell,
-  BellOff,
-  MessageSquare
+  BellOff
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ChatInterface } from "@/components/chat-interface"
@@ -42,13 +31,6 @@ import { AddChannelDialog } from "@/components/add-channel-dialog"
 import { ManageGroupMembersDialog } from "@/components/manage-group-members-dialog"
 import Link from "next/link"
 import Image from "next/image"
-import { VideoCallDialog } from "@/components/video-call-dialog"
-
-interface GroupPageProps {
-  params: {
-    groupId: string
-  }
-}
 
 export default function GroupPage() {
   const params = useParams();
@@ -62,7 +44,7 @@ export default function GroupPage() {
   
   const [group, setGroup] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("chat")
+  // const [activeTab, setActiveTab] = useState("chat")
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isDirectMessageOpen, setIsDirectMessageOpen] = useState(false)

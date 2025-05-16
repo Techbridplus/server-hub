@@ -62,7 +62,7 @@ export function GroupCard({ group, serverId, canEdit = false }: GroupCardProps) 
   const [isDeleting, setIsDeleting] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
-  const [isServerMember, setIsServerMember] = useState(false)
+  // const [isServerMember, setIsServerMember] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isInvited, setIsInvited] = useState(false)
 

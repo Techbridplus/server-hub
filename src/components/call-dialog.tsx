@@ -8,7 +8,6 @@ import {
   MicOff,
   Video,
   VideoOff,
-  Phone,
   PhoneOff
 } from "lucide-react"
 import { getSocket } from "@/lib/socket-client"
@@ -29,7 +28,6 @@ export function CallDialog({
   isOpen,
   onClose,
   otherUser,
-  currentUserId,
   type
 }: CallDialogProps) {
   const [isMuted, setIsMuted] = useState(false)

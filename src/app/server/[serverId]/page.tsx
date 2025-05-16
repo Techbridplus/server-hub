@@ -7,7 +7,6 @@ import { CalendarDays, ChevronRight, Edit, MessageSquare, Users, Menu, Shield, U
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { EventCard } from "@/components/event-card"
 import  ModernEventCarousel  from "@/components/modern-event-carousel"
 import { AnnouncementCard } from "@/components/announcement-card"
 import { GroupCard } from "@/components/group-card"
@@ -17,13 +16,12 @@ import { CreateEventDialog } from "@/components/create-event-dialog"
 import { CreateAnnouncementDialog } from "@/components/create-announcement-dialog"
 import { CreateGroupDialog } from "@/components/create-group-dialog"
 import { MembersDialog } from "@/components/manage-members-dialog"
-import { PrivateServerAccessDialog } from "@/components/private-server-access-dialog"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
 import { useSession } from "next-auth/react"
 import React from "react"
 import { useParams } from "next/navigation"
-import { Server, MemberRole, Event, Group, Announcement, ServerMember } from "@prisma/client"
+import { Server, MemberRole, Event, Group, Announcement } from "@prisma/client"
 import { PastEventCard } from "@/components/past-event-card"
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogCancel, AlertDialogAction, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -32,8 +30,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 interface AnnouncementWithAuthor extends Announcement {
   author: {
     id: string;
-    name: string;
-    image: string;
+    name: string | null; // Updated to allow null
+    image: string | null; // Updated to allow null
   };
   _count: {
     likes: number;
@@ -60,13 +58,8 @@ export default function ServerPage() {
   const params = useParams<{ serverId: string }>();
   const serverId = params.serverId
  
-  // State for private server access
-  const [hasAccess, setHasAccess] = useState(false)
-  const [showAccessDialog, setShowAccessDialog] = useState(false)
   const [userRole, setUserRole] = useState<MemberRole>(MemberRole.VISITOR)
   const [isLoading, setIsLoading] = useState(true)
-  const { data: session } = useSession()
-  const userId = session?.user?.id
   // Server data
   const [server, setServer] = useState<ServerWithMembers | null>(null)
 
@@ -192,57 +185,8 @@ export default function ServerPage() {
   const hasEditRights = isAdmin || isModerator
 
   // Handle private server access
-  const handleAccessSubmit = async (accessKey: string) => {
-    // try {
-    //   const response = await axios.get<{ success: boolean; role: "member" | "visitor" }>(
-    //     `/api/servers/${serverId}/access`,
-    //     {
-    //       params: {
-    //         accessKey,
-    //       },
-    //     },
-    //   )
-
-    //   if (response.data.success) {
-    //     setHasAccess(true)
-    //     setShowAccessDialog(false)
-    //     setUserRole(response.data.role)
-
-    //     // Fetch server data again
-    //     const serverData = await axios.get<Server>(`/api/servers/${serverId}`)
-    //     setServer(serverData.data)
-
-    //     // Fetch events
-    //     const eventsData = await axios.get<{
-    //       upcoming: Event[]
-    //       past: Event[]
-    //     }>(`/api/servers/${serverId}/events`)
-
-    //     setUpcomingEvents(eventsData.data.upcoming)
-    //     setPastEvents(eventsData.data.past)
-
-    //     // Fetch announcements
-    //     const announcementsData = await axios.get<Announcement[]>(`/api/servers/${serverId}/announcements`)
-    //     setAnnouncements(announcementsData.data)
-
-    //     // Fetch groups
-    //     const groupsData = await axios.get<Group[]>(`/api/servers/${serverId}/groups`)
-    //     setGroups(groupsData.data)
-    //   } else {
-    //     toast({
-    //       title: "Invalid access key",
-    //       description: "The access key you provided is invalid. Please try again.",
-    //       variant: "destructive",
-    //     })
-    //   }
-    // } catch (error) {
-    //   console.error("Error submitting access key:", error)
-    //   toast({
-    //     title: "Error",
-    //     description: "Failed to verify access key. Please try again.",
-    //     variant: "destructive",
-    //   })
-    // }
+  const handleAccessSubmit = async () => {
+    // Removed unused 'accessKey' parameter
   }
 
   // Join server handler
@@ -308,22 +252,12 @@ export default function ServerPage() {
     )
   }
 
-  if (showAccessDialog) {
-    return (
-      <PrivateServerAccessDialog
-        serverName={server?.name || "Private Server"}
-        onSubmit={handleAccessSubmit}
-        onCancel={() => (window.location.href = "/")}
-      />
-    )
-  }
-
   if (!server) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Server not found</h1>
-          <p className="text-muted-foreground">The server you're looking for doesn't exist or you don't have access.</p>
+          <p className="text-muted-foreground">The server you&apos;re looking for doesn&apos;t exist or you don&apos;t have access.</p>
           <Button className="mt-4" asChild>
             <Link href="/">Go Home</Link>
           </Button>
@@ -496,7 +430,7 @@ export default function ServerPage() {
                     Events
                   </Link>
                 </Button>
-                {(hasAccess || !server.isPrivate) && (
+                {(server.isPrivate) && (
                   <>
                     <Button variant="ghost" className="justify-start" asChild>
                       <Link href="#announcements">
@@ -524,7 +458,7 @@ export default function ServerPage() {
               <CalendarDays className="h-4 w-4" />
               Events
             </TabsTrigger>
-            {(hasAccess || !server.isPrivate) && (
+            {(server.isPrivate) && (
               <>
                 <TabsTrigger value="announcements" className="flex items-center gap-1">
                   <MessageSquare className="h-4 w-4" />
@@ -536,7 +470,7 @@ export default function ServerPage() {
                 </TabsTrigger>
               </>
             )}
-            {!hasAccess && server.isPrivate && (
+            {!server.isPrivate && (
               <div className="ml-auto flex items-center">
                 <Badge variant="outline" className="flex gap-1 text-amber-500">
                   <Lock className="h-3 w-3" />
@@ -605,7 +539,7 @@ export default function ServerPage() {
             </div>
           </TabsContent>
 
-          {(hasAccess || !server.isPrivate) && (
+          {(server.isPrivate) && (
             <>
               <TabsContent value="announcements" className="mt-6 space-y-8 animate-fade-in" id="announcements">
                 <div className="flex items-center justify-between">
@@ -672,8 +606,8 @@ export default function ServerPage() {
                     announcements.map((announcement) => (
                       <div className="mb-4" key={announcement.id}>
                         <AnnouncementCard
+                          key={announcement.id}
                           announcement={announcement}
-                          serverId={serverId}
                           onAnnouncementUpdated={handleAnnouncementUpdated}
                           onAnnouncementDeleted={handleAnnouncementDeleted}
                         />
@@ -800,7 +734,7 @@ export default function ServerPage() {
             </div>
           </section>
 
-          {(hasAccess || !server.isPrivate) && (
+          {(server.isPrivate) && (
             <>
               <section id="announcements" className="space-y-8 scroll-mt-16">
                 <div className="flex items-center justify-between">
@@ -868,7 +802,6 @@ export default function ServerPage() {
                       <AnnouncementCard
                         key={announcement.id}
                         announcement={announcement}
-                        serverId={serverId}
                         onAnnouncementUpdated={handleAnnouncementUpdated}
                         onAnnouncementDeleted={handleAnnouncementDeleted}
                       />
