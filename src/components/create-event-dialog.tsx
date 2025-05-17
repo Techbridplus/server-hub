@@ -25,6 +25,7 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import { UploadButton } from "@/components/upload-button"
+import { useSession } from "next-auth/react"
 
 interface CreateEventDialogProps {
   serverId: string
@@ -48,6 +49,7 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
   const [maxAttendees, setMaxAttendees] = useState("50")
   const [eventType, setEventType] = useState("gaming")
   const [bannerImage, setBannerImage] = useState<string | null>(null)
+  const { data: session } = useSession()
 
   const validateStartTime = (time: string) => {
     const selectedDate = new Date(date || new Date())
@@ -112,6 +114,7 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    
 
     try {
       // Validate required fields
@@ -128,6 +131,7 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
       // Create start date by combining date and time
       const startDate = new Date(date)
       const [startHours, startMinutes] = startTime.split(":")
+      
       startDate.setHours(parseInt(startHours, 10), parseInt(startMinutes, 10), 0, 0)
 
       // Validate start time is not in the past
@@ -207,6 +211,17 @@ export function CreateEventDialog({ serverId, buttonSize = "default", onEventCre
         title: "Event created",
         description: "Your event has been created successfully",
       })
+
+      //I will enter notification here
+      await fetch('/api/notifications', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: session?.user?.id,
+          heading: `New Event Created ⏳`,
+          message: `"New event ${eventData.title}" created successfully.`,
+          type: 'success',
+        }),
+      });
 
       // Call the callback if provided
       if (onEventCreated) {
