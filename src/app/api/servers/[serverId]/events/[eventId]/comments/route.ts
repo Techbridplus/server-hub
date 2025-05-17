@@ -91,7 +91,7 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
 
 // POST /api/servers/[serverId]/events/[eventId]/comments - Create a comment
 export async function POST(req: NextRequest, { params }: { params: { serverId: string; eventId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { serverId, eventId } = params
       const { content } = await req.json()

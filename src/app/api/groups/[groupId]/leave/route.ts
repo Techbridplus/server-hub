@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 
 // POST /api/groups/[groupId]/leave - Leave a group
 export async function POST(
   request: NextRequest,
   { params }: { params: { groupId: string } }
 ) {
-  return authMiddlewareAppRouter(request, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { groupId } = params
 

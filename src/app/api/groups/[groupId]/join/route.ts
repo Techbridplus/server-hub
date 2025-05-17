@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter } from "@/lib/auth"
 import { MemberRole } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 
 // POST /api/groups/[groupId]/join - Join a group
 export async function POST(
   request: NextRequest,
   { params }: { params: { groupId: string } }
 ) {
-  return authMiddlewareAppRouter(request, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { groupId } = params
-      const { serverId } = await req.json()
+      const { serverId } = await request.json()
 
       if (!serverId) {
         return NextResponse.json(

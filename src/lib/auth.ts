@@ -6,7 +6,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { authenticator } from "otplib"
-import { type NextRequest, NextResponse } from "next/server"
+import {  NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 
 declare module "next-auth" {
@@ -97,7 +97,7 @@ export const authOptions: NextAuthOptions = {
     newUser: "/",
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (account?.provider === "google" || account?.provider === "github") {
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email! },
@@ -193,9 +193,9 @@ async function verify2FACode(userId: string, code: string): Promise<boolean> {
   })
 }
 
-type HandlerFunction = (req: NextRequest, session: any, prisma: PrismaClient) => Promise<NextResponse>
+type HandlerFunction = ( session: any) => Promise<NextResponse>
 
-export async function authMiddlewareAppRouter(req: NextRequest, handler: HandlerFunction) {
+export async function authMiddlewareAppRouter( handler: HandlerFunction) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -203,7 +203,7 @@ export async function authMiddlewareAppRouter(req: NextRequest, handler: Handler
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    return handler(req, session, prisma)
+    return handler(session)
   } catch (error) {
     console.error("Auth middleware error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

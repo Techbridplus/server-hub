@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
-import { useRouter } from "next/router"
+
 
 export async function GET(
   request: NextRequest,

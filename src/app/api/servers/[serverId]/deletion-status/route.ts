@@ -4,8 +4,9 @@ import prisma from "@/lib/prisma"
 
 // GET /api/servers/[serverId]/deletion-status - Check status of scheduled server deletion
 export async function GET(req: NextRequest, { params }: { params: { serverId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
+      console.log(req)
       // Ensure params is properly awaited
       const { serverId } = await Promise.resolve(params)
 

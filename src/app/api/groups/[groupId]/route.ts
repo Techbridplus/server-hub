@@ -73,10 +73,10 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { groupId: string } }
 ) {
-  return authMiddlewareAppRouter(request, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { groupId } = params
-      const { name, description, imageUrl, isPrivate } = await req.json()
+      const { name, description, imageUrl, isPrivate } = await request.json()
 
       // Check if group exists and get member role
       const group = await prisma.group.findUnique({
@@ -131,7 +131,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { groupId: string } }
 ) {
-  return authMiddlewareAppRouter(request, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { groupId } = params
 

@@ -1,24 +1,22 @@
 "use client"
 
 
-import { Server, Group } from '@prisma/client'
-import axios from 'axios'
+import { Group } from '@prisma/client'
 import { useEffect, useState } from 'react'
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { CreateServerModal } from "@/components/create-server-modal"
-import { Search, Filter, Compass, TrendingUp, Star, History, Settings, Sparkles, Bookmark, Palette, LogOut, Bell, ChevronDown, LayoutGrid, Layout } from "lucide-react"
+import { Compass, Star, History, Settings, Sparkles, Bookmark,  LogOut, } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { signOut, useSession } from "next-auth/react"
 
 function ServerSidebar() {
     const { data: session } = useSession()
-    const [myServers, setMyServers] = useState<Server[]>([])
+    // const [myServers, setMyServers] = useState<Server[]>([])
     const [joinedGroups, setJoinedGroups] = useState<Group[]>([])
     const [isLoading, setIsLoading] = useState(true)
     console.log("image:", session?.user?.image)

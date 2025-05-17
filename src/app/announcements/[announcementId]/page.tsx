@@ -19,6 +19,12 @@ async function getAnnouncement(announcementId: string) {
           image: true,
         },
       },
+      _count: {
+        select: {
+          likes: true,
+          comments: true,
+        },
+      },
     },
   })
 
@@ -39,4 +45,4 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
       </div>
     </div>
   )
-} 
+}

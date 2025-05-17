@@ -10,9 +10,9 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 
 interface PrivateServerAccessDialogProps {
-  serverName: string
-  onSubmit: (accessKey: string) => void
-  onCancel: () => void
+  serverName: string;
+  onSubmit: (accessKey: string) => void;
+  onCancel: () => void;
 }
 
 export function PrivateServerAccessDialog({ serverName, onSubmit, onCancel }: PrivateServerAccessDialogProps) {

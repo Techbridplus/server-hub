@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: { announcement
 
 // PATCH /api/announcements/[announcementId] - Update an announcement
 export async function PATCH(req: NextRequest, { params }: { params: { announcementId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { title, content, isImportant } = await req.json()
 
@@ -96,7 +96,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { announceme
 
 // DELETE /api/announcements/[announcementId] - Delete an announcement
 export async function DELETE(req: NextRequest, { params }: { params: { announcementId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const announcement = await prisma.announcement.findUnique({
         where: { id: params.announcementId },

@@ -121,7 +121,6 @@ export function CreateGroupDialog({ serverId, buttonSize = "default", onGroupCre
         throw new Error(error.error || "Failed to create group")
       }
 
-      const group = await response.json()
 
       // Reset form
       setName("")

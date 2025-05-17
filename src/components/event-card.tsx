@@ -1,12 +1,9 @@
-import { CalendarDays, Star, Users } from "lucide-react"
+import { CalendarDays, Star } from "lucide-react"
 import Image from "next/image"
-import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Card, CardHeader } from "@/components/ui/card"
 import { Event } from "@prisma/client"
 import { useRouter } from "next/navigation"
-import { cn } from "@/lib/utils"
 
 interface EventCardProps {
   event: Event

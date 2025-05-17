@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: { groupId: str
         );
     }
 
-    return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+    return authMiddlewareAppRouter(async (session) => {
         const userId = session.user.id;
 
         // Validate input
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: { serverId: s
         );
     }
 
-    return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+    return authMiddlewareAppRouter(async (session) => {
         const userId = session.user.id;
 
         // Validate input

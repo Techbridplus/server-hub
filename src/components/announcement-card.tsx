@@ -1,13 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Heart, MessageSquare, AlertTriangle, ChevronDown, ChevronUp, MoreHorizontal, Edit, Trash, MessageCircle, Send } from "lucide-react"
+import { Heart, MoreHorizontal, Edit, Trash, MessageCircle, Send } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { CommentSection } from "@/components/comment-section"
-import { ShareDialog } from "@/components/share-dialog"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
@@ -18,7 +15,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
   Dialog,
@@ -27,22 +23,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { formatDistanceToNow, isValid } from "date-fns"
+import { formatDistanceToNow } from "date-fns"
 import { useSession } from "next-auth/react"
-import { Announcement, User, Comment } from "@prisma/client"
+import { Announcement, Comment } from "@prisma/client"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface AnnouncementWithAuthor extends Announcement {
   author: {
     id: string
-    name: string
-    image: string
+    name: string | null // Updated to allow null
+    image: string | null // Updated to allow null
   }
   _count: {
     likes: number
@@ -60,14 +55,12 @@ interface CommentWithUser extends Comment {
 
 interface AnnouncementCardProps {
   announcement: AnnouncementWithAuthor
-  serverId?: string
   onAnnouncementUpdated?: (updatedAnnouncement: AnnouncementWithAuthor) => void
   onAnnouncementDeleted?: (announcementId: string) => void
 }
 
 export function AnnouncementCard({ 
-  announcement, 
-  serverId,
+  announcement,
   onAnnouncementUpdated,
   onAnnouncementDeleted 
 }: AnnouncementCardProps) {

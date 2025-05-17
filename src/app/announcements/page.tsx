@@ -1,4 +1,3 @@
-import { Suspense } from "react"
 import { AnnouncementCard } from "@/components/announcement-card"
 import { Announcement } from "@prisma/client";
 import axios from "axios"

@@ -58,7 +58,7 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
 
 // PUT /api/servers/[serverId]/groups/[groupId] - Update group
 export async function PUT(req: NextRequest, { params }: { params: { serverId: string; groupId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { serverId, groupId } = params
       const { name, description, imageUrl, isPrivate } = await req.json()
@@ -93,7 +93,7 @@ export async function PUT(req: NextRequest, { params }: { params: { serverId: st
 
 // DELETE /api/servers/[serverId]/groups/[groupId] - Delete group
 export async function DELETE(req: NextRequest, { params }: { params: { serverId: string; groupId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { serverId, groupId } = params
 

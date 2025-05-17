@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Plus, Upload, X } from "lucide-react"
+import { Plus, X } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { UploadButton } from "@/components/upload-button"

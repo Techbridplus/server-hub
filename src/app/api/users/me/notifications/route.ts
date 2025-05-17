@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter } from "@/lib/auth"
+import prisma from "@/lib/prisma"
 
 // GET /api/users/me/notifications - Get current user's notifications
 export async function GET(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { searchParams } = new URL(req.url)
       const page = Number.parseInt(searchParams.get("page") || "1")
@@ -69,7 +70,7 @@ export async function GET(req: NextRequest) {
 
 // PUT /api/users/me/notifications - Mark notifications as read
 export async function PUT(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { ids, all } = await req.json()
 

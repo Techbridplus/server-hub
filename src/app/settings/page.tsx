@@ -39,7 +39,6 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings | null>(null)
   const [formData, setFormData] = useState<Partial<UserSettings>>({})
   const [isVerifyingEmail, setIsVerifyingEmail] = useState(false)
-  const [emailVerificationError, setEmailVerificationError] = useState<string | null>(null)
   const [newEmail, setNewEmail] = useState("")
   const [isCheckingEmail, setIsCheckingEmail] = useState(false)
   const [emailCheckError, setEmailCheckError] = useState<string | null>(null)
@@ -113,7 +112,6 @@ export default function SettingsPage() {
       
       if (response.data.success) {
         setShowVerificationInput(true)
-        setEmailVerificationError(null)
       } else {
         setEmailCheckError(response.data.error || "Failed to verify email")
       }

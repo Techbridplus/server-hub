@@ -9,7 +9,7 @@ export async function PUT(
   req: NextRequest,
   context: { params: { serverId: string; memberId: string } }
 ) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { serverId, memberId } = context.params
       const { role } = await req.json()
@@ -75,7 +75,7 @@ export async function DELETE(
   req: NextRequest,
   context: { params: { serverId: string; memberId: string } }
 ) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { serverId, memberId } = context.params
 

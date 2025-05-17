@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 
 // GET /api/users/me/servers - Get current user's servers
 export async function GET(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req, session) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       const { searchParams } = new URL(req.url)
       const owned = searchParams.get("owned") === "true"

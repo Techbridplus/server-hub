@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { authMiddlewareAppRouter, isServerAdmin } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 export async function GET(req: NextRequest, { params }: { params: { serverId: string } }) {
-    return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+    return authMiddlewareAppRouter(async (session) => {
         const { serverId } = await Promise.resolve(params)
         const userId = session.user.id
         try {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Bell } from "lucide-react"
-import { Home, DollarSign, Clock, CheckCheck, X } from "lucide-react"
+import { Home, DollarSign, Clock, CheckCheck} from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"

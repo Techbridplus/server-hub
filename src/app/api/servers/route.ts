@@ -111,7 +111,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/servers - Create a new server (protected route)
 export async function POST(req: NextRequest) {
-  return authMiddlewareAppRouter(req, async (req, session) => {
+  return authMiddlewareAppRouter( async (session) => {
     try {
       const body = await req.json()
       const { name, description, category, isPrivate, imageUrl, bannerUrl } = body

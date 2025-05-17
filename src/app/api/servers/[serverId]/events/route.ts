@@ -99,7 +99,7 @@ export async function GET(req: NextRequest, { params }: { params: { serverId: st
 
 // POST /api/servers/[serverId]/events - Create a new event
 export async function POST(req: NextRequest, { params }: { params: { serverId: string } }) {
-  return authMiddlewareAppRouter(req, async (req, session, prisma) => {
+  return authMiddlewareAppRouter(async (session) => {
     try {
       // Ensure params is properly awaited
       const { serverId } = await Promise.resolve(params)
