@@ -33,6 +33,8 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 import axios from "axios"
 import { useRouter } from "next/navigation"
+// import { useSession } from "next-auth/react"
+
 const formSchema = z.object({
   name: z.string().min(2, "Server name must be at least 2 characters"),
   description: z.string().optional(),
@@ -49,6 +51,7 @@ interface CreateServerModalProps {
   className?: string
   onServerCreated?: () => void
 }
+// I will add a page reload here
 
 export function CreateServerModal({ buttonText = "Create Server", className = "", onServerCreated }: CreateServerModalProps) {
   const [open, setOpen] = useState(false)
@@ -56,6 +59,7 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const { toast } = useToast()
   const router = useRouter()
+  // const { data: session } = useSession()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -98,6 +102,17 @@ export function CreateServerModal({ buttonText = "Create Server", className = ""
         title: "Success",
         description: "Server created successfully",
       })
+      //yahan server create hora h
+      // await fetch('/api/notifications', {
+      //   method: 'POST',
+      //   body: JSON.stringify({
+      //     userId: session?.user?.id,
+      //     message: `New server "${values.name}" created.`,
+      //     type: 'success',
+      //   }),
+      // });
+
+
       setOpen(false)
       form.reset()
       setBannerPreview(null)

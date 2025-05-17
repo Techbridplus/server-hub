@@ -69,6 +69,7 @@ model Session {
 model Notification {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   userId    String   @db.ObjectId // or reference User model if you have one
+  heading   String?
   message   String
   type      String // e.g., 'info', 'success', etc.
   read      Boolean  @default(false)

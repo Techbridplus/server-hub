@@ -7,62 +7,20 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-// Sample notification data
-const notifications = [
-  {
-    id: 1,
-    type: "maintenance",
-    title: "Maintenance request update",
-    content:
-      "The maintenance request for Tenant A in Apartment 301 has been Completed. The issue was a leaking faucet in the kitchen.",
-    time: "5h ago",
-    read: false,
-    icon: Home,
-    highlight: "Completed",
-    highlightColor: "text-emerald-600",
-    bgColor: "bg-white",
-  },
-  {
-    id: 2,
-    type: "payment",
-    title: "Rent Payment Confirmation",
-    content:
-      "We have received the rent payment of $1,200 for Tenant B in Apartment 102. The payment was processed successfully.",
-    time: "7h ago",
-    read: false,
-    icon: DollarSign,
-    highlight: "successfully",
-    highlightColor: "text-emerald-600",
-    bgColor: "bg-emerald-50",
-  },
-  {
-    id: 3,
-    type: "lease",
-    title: "Lease Renewal Reminder",
-    content:
-      "The lease for Tenant C in Apartment 308 is set to expire on October 15, 2023. Please take appropriate action to initiate lease renewal discussions.",
-    time: "7h ago",
-    read: false,
-    icon: Clock,
-    highlight: "expire on October 15, 2023",
-    highlightColor: "text-red-600",
-    bgColor: "bg-white",
-  },
-  // Add more notifications to demonstrate the 100+ feature
-  ...Array.from({ length: 98 }, (_, i) => ({
-    id: i + 4,
-    type: i % 3 === 0 ? "maintenance" : i % 3 === 1 ? "payment" : "lease",
-    title:
-      i % 3 === 0 ? "Maintenance request update" : i % 3 === 1 ? "Rent Payment Confirmation" : "Lease Renewal Reminder",
-    content: `Sample notification content ${i + 4}`,
-    time: `${Math.floor(Math.random() * 24)}h ago`,
-    read: false,
-    icon: i % 3 === 0 ? Home : i % 3 === 1 ? DollarSign : Clock,
-    highlight: i % 3 === 0 ? "Completed" : i % 3 === 1 ? "successfully" : "expire",
-    highlightColor: i % 3 === 0 ? "text-emerald-600" : i % 3 === 1 ? "text-emerald-600" : "text-red-600",
-    bgColor: i % 3 === 1 ? "bg-emerald-50" : "bg-white",
-  })),
-]
+interface Notification {
+  id: string;
+  userId: string;
+  heading: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  read: boolean;
+  createdAt: string;
+  // Optional UI-specific fields
+  icon?: any;
+  highlight?: string;
+  highlightColor?: string;
+  bgColor?: string;
+}
 
 // Format notification content with highlighted text
 const formatContent = (content: string, highlight: string, highlightColor: string) => {
@@ -78,14 +36,47 @@ const formatContent = (content: string, highlight: string, highlightColor: strin
   )
 }
 
+// Format date to relative time
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+  
+  if (diffInSeconds < 60) return 'just now'
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+  return date.toLocaleDateString()
+}
+
 export default function NotificationSystem() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showFullModal, setShowFullModal] = useState(false)
-  const [notificationData, setNotificationData] = useState(notifications)
+  const [notificationData, setNotificationData] = useState<Notification[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const notificationRef = useRef<HTMLDivElement>(null)
   const bellRef = useRef<HTMLDivElement>(null)
 
   const unreadCount = notificationData.filter((n) => !n.read).length
+
+  const fetchNotifications = async () => {
+    try {
+      setIsLoading(true)
+      const res = await fetch('/api/notifications')
+      const data = await res.json()
+      setNotificationData(data)
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fetch notifications when dropdown is opened
+  useEffect(() => {
+    if (showNotifications) {
+      fetchNotifications()
+    }
+  }, [showNotifications])
 
   // Close notifications when clicking outside
   useEffect(() => {
@@ -124,7 +115,7 @@ export default function NotificationSystem() {
     <>
       {/* Bell Icon with notification indicator */}
       <div className="relative" ref={bellRef}>
-        <Button onClick={toggleNotifications} className="p-2 rounded-full hover:bg-accent transition-colors  " variant="sobs" >
+        <Button onClick={toggleNotifications} className="p-2 rounded-full hover:bg-accent transition-colors" variant="sobs">
           <Bell className="h-4 w-4 text-gray-700" />
           {unreadCount > 0 && (
             <>
@@ -158,25 +149,35 @@ export default function NotificationSystem() {
             </div>
 
             <CardContent className="p-0 max-h-[350px] overflow-y-auto">
-              {notificationData.slice(0, 3).map((notification) => (
-                <div key={notification.id} className={`border-b ${notification.bgColor}`}>
-                  <div className="flex gap-3 p-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                      <notification.icon className="h-4 w-4 text-gray-500" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                        <h4 className="font-medium text-gray-800 text-sm">{notification.title}</h4>
-                        <span className="ml-auto text-gray-500 text-xs">{notification.time}</span>
+              {isLoading ? (
+                <div className="p-4 text-center text-gray-500">Loading notifications...</div>
+              ) : notificationData.length === 0 ? (
+                <div className="p-4 text-center text-gray-500">No notifications</div>
+              ) : (
+                notificationData.slice(0, 3).map((notification) => (
+                  <div key={notification.id} className={`border-b ${notification.bgColor || 'bg-white'}`}>
+                    <div className="flex gap-3 p-3">
+                      <div className="flex-shrink-0 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        {notification.icon ? (
+                          <notification.icon className="h-4 w-4 text-gray-500" />
+                        ) : (
+                          <Bell className="h-4 w-4 text-gray-500" />
+                        )}
                       </div>
-                      <p className="text-gray-600 text-xs">
-                        {formatContent(notification.content, notification.highlight, notification.highlightColor)}
-                      </p>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          {!notification.read && <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>}
+                          <h4 className="font-medium text-gray-800 text-sm">{notification.heading}</h4>
+                          <span className="ml-auto text-gray-500 text-xs">{formatDate(notification.createdAt)}</span>
+                        </div>
+                        <p className="text-gray-600 text-xs">
+                          {formatContent(notification.message, notification.highlight || '', notification.highlightColor || '')}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </CardContent>
 
             <CardFooter className="border-t py-2 px-4">
@@ -192,7 +193,7 @@ export default function NotificationSystem() {
         </div>
       )}
 
-      {/* Replace Card Modal with Dialog */}
+      {/* Full Modal */}
       <Dialog open={showFullModal} onOpenChange={setShowFullModal}>
         <DialogContent className="max-w-3xl max-h-[90vh]">
           <DialogHeader>
@@ -204,48 +205,35 @@ export default function NotificationSystem() {
           </div>
 
           <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-            {notificationData.map((notification) => (
-              <div key={notification.id} className={`border-b ${notification.bgColor}`}>
-                <div className="flex gap-4 p-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                    <notification.icon className="h-5 w-5 text-gray-500" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      {!notification.read && <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>}
-                      <h4 className="font-medium text-gray-800">{notification.title}</h4>
-                      <span className="ml-auto text-gray-500 text-sm">{notification.time}</span>
-                    </div>
-                    <p className="text-gray-600">
-                      {notification.type === "maintenance" ? (
-                        <>
-                          The maintenance request for <span className="font-medium">Tenant A</span> in{" "}
-                          <span className="font-medium">Apartment 301</span> has been{" "}
-                          <span className="text-emerald-600 font-medium">Completed</span>. The issue was a{" "}
-                          <span className="font-medium">leaking faucet in the kitchen</span>.
-                        </>
-                      ) : notification.type === "payment" ? (
-                        <>
-                          We have received the rent payment of <span className="font-medium">$1,200</span> for{" "}
-                          <span className="font-medium">Tenant B</span> in{" "}
-                          <span className="font-medium">Apartment 102</span>. The payment was processed{" "}
-                          <span className="text-emerald-600 font-medium">successfully</span>.
-                        </>
-                      ) : notification.type === "lease" ? (
-                        <>
-                          The lease for <span className="font-medium">Tenant C</span> in{" "}
-                          <span className="font-medium">Apartment 308</span> is set to{" "}
-                          <span className="text-red-600 font-medium">expire on October 15, 2023</span>. Please take
-                          appropriate action to initiate lease renewal discussions.
-                        </>
+            {isLoading ? (
+              <div className="p-4 text-center text-gray-500">Loading notifications...</div>
+            ) : notificationData.length === 0 ? (
+              <div className="p-4 text-center text-gray-500">No notifications</div>
+            ) : (
+              notificationData.map((notification) => (
+                <div key={notification.id} className={`border-b ${notification.bgColor || 'bg-white'}`}>
+                  <div className="flex gap-4 p-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                      {notification.icon ? (
+                        <notification.icon className="h-5 w-5 text-gray-500" />
                       ) : (
-                        formatContent(notification.content, notification.highlight, notification.highlightColor)
+                        <Bell className="h-5 w-5 text-gray-500" />
                       )}
-                    </p>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {!notification.read && <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>}
+                        <h4 className="font-medium text-gray-800">{notification.heading}</h4>
+                        <span className="ml-auto text-gray-500 text-sm">{formatDate(notification.createdAt)}</span>
+                      </div>
+                      <p className="text-gray-600">
+                        {formatContent(notification.message, notification.highlight || '', notification.highlightColor || '')}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </DialogContent>
       </Dialog>
