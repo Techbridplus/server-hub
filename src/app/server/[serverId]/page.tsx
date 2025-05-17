@@ -458,7 +458,7 @@ export default function ServerPage() {
               <CalendarDays className="h-4 w-4" />
               Events
             </TabsTrigger>
-            {(server.isPrivate) && (
+            {(!server.isPrivate) && (
               <>
                 <TabsTrigger value="announcements" className="flex items-center gap-1">
                   <MessageSquare className="h-4 w-4" />
@@ -470,7 +470,7 @@ export default function ServerPage() {
                 </TabsTrigger>
               </>
             )}
-            {!server.isPrivate && (
+            {server.isPrivate && (
               <div className="ml-auto flex items-center">
                 <Badge variant="outline" className="flex gap-1 text-amber-500">
                   <Lock className="h-3 w-3" />
@@ -539,7 +539,7 @@ export default function ServerPage() {
             </div>
           </TabsContent>
 
-          {(server.isPrivate) && (
+          {(!server.isPrivate) && (
             <>
               <TabsContent value="announcements" className="mt-6 space-y-8 animate-fade-in" id="announcements">
                 <div className="flex items-center justify-between">
@@ -734,7 +734,7 @@ export default function ServerPage() {
             </div>
           </section>
 
-          {(server.isPrivate) && (
+          {(!server.isPrivate) && (
             <>
               <section id="announcements" className="space-y-8 scroll-mt-16">
                 <div className="flex items-center justify-between">
