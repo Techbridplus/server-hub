@@ -4,7 +4,7 @@ let socket: Socket | null = null
 
 export const initSocket = (userId: string, serverId: string) => {
   if (!socket) {
-    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001", {
+    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "https://server-hub-socket-server.onrender.com", {
       query: {
         userId,
         serverId

@@ -57,7 +57,6 @@ export async function GET() {
 export async function GET_SERVERS(req: NextRequest) {
   return authMiddlewareAppRouter(async (session) => {
     try {
-      console.log("Session:", session)
 
       const category = req.url.split("/").pop()?.split("?")[0]
       

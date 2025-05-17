@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev\" \"cd socket-server && npm run dev\"",
+    "dev": "next dev",
     "build": "npm install --legacy-peer-deps && next build",
-    "start": "concurrently \"next start\" \"cd socket-server && npm start\"",
+    "start": "concurrently \"next start\" \" npm start\"",
     "lint": "next lint",
     "dev:server": "ts-node --project tsconfig.server.json src/server.ts",
     "build:server": "tsc --project tsconfig.server.json",

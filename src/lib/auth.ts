@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs"
 import { authenticator } from "otplib"
 import {  NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import { Session } from "next-auth"
 
 declare module "next-auth" {
   interface Session {
@@ -193,7 +194,7 @@ async function verify2FACode(userId: string, code: string): Promise<boolean> {
   })
 }
 
-type HandlerFunction = ( session: any) => Promise<NextResponse>
+type HandlerFunction = (session: Session) => Promise<NextResponse>;
 
 export async function authMiddlewareAppRouter( handler: HandlerFunction) {
   try {
