@@ -25,6 +25,7 @@ import { Server, MemberRole, Event, Group, Announcement } from "@prisma/client"
 import { PastEventCard } from "@/components/past-event-card"
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogCancel, AlertDialogAction, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
+import NotificationSystem from "@/components/notification-system"
 
 // Define the AnnouncementWithAuthor interface
 interface AnnouncementWithAuthor extends Announcement {
@@ -320,6 +321,11 @@ export default function ServerPage() {
           </div>
 
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <Button variant="outline" className="flex-1 sm:flex-none" size="icon">
+              <NotificationSystem />
+            </Button>
+
+          
             <Button variant="outline" className="flex-1 sm:flex-none" asChild>
               <Link href="/">
                 <Home className="mr-2 h-4 w-4" />
